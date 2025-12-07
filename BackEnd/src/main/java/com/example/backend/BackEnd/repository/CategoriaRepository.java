@@ -8,6 +8,6 @@ import com.example.backend.BackEnd.model.Categoria;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
-    Optional<Categoria> findByNombre(String nombre);
+    Optional<Categoria> findByNombreCategoria(String nombreCategoria);
     
 }

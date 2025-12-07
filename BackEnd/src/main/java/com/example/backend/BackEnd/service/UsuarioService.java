@@ -21,16 +21,16 @@ public class UsuarioService {
     }
 
     public Usuario saveUsuario(Usuario usuario) {
-        usuario.setId(null);
+        usuario.setIdUsuario(null);
         return usuarioRepository.save(usuario);
     }
 
-    public Optional<Usuario> findByIdUsuario(Long id) {
-        return usuarioRepository.findById(id);
+    public Optional<Usuario> findByIdUsuario(Long idUsuario) {
+        return usuarioRepository.findById(idUsuario);
     }
 
-    public void deleteUsuario(Long id) {
-        usuarioRepository.deleteById(id);
+    public void deleteUsuario(Long idUsuario) {
+        usuarioRepository.deleteById(idUsuario);
     }
     
 }

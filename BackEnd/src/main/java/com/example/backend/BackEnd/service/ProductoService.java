@@ -21,16 +21,16 @@ public class ProductoService {
     }
 
     public Producto saveProducto(Producto prod) {
-        prod.setId(null);
+        prod.setIdProducto(null);
         return productoRepository.save(prod);
     }
-
-    public Optional<Producto> findByIdProducto(Long id) {
-        return productoRepository.findById(id);
+    
+    public Optional<Producto> findByIdProducto(Long idProducto) {
+        return productoRepository.findById(idProducto);
     }
 
-    public void deleteProducto(Long id) {
-        productoRepository.deleteById(id);
+    public void deleteProducto(Long idProducto) {
+        productoRepository.deleteById(idProducto);
     }
     
 }

@@ -29,33 +29,32 @@ public class ProductoController {
     public Producto postProducto(@RequestBody Producto entity) {        
         return productoService.saveProducto(entity);
     }
-    @GetMapping("/find/{id}")
-    public Optional<Producto> getProductoId(@PathVariable Long id) {
-        return productoService.findByIdProducto(id);
+    @GetMapping("/find/{idProducto}")
+    public Optional<Producto> getProductoId(@PathVariable Long idProducto) {
+        return productoService.findByIdProducto(idProducto);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteProducto(@PathVariable Long id){
-        productoService.deleteProducto(id);
+    @DeleteMapping("/delete/{idProducto}")
+    public void deleteProducto(@PathVariable Long idProducto){
+        productoService.deleteProducto(idProducto);
     }
     
     @Autowired
     private ProductoRepository productoRepository;
-    @PutMapping("/update/{id}")
+    @PutMapping("/update/{idProducto}")
     public Optional<Object> 
-        putProducto(@PathVariable Long id, @RequestBody Producto entity) {
+        putProducto(@PathVariable Long idProducto, @RequestBody Producto entity) {
         
-        return productoRepository.findById(id)
+        return productoRepository.findById(idProducto)
         .map(existeProducto->{
-            existeProducto.setCodigo(entity.getCodigo());
-            existeProducto.setNombre(entity.getNombre());
-            existeProducto.setDescripcion(entity.getDescripcion());
-            existeProducto.setPrecio(entity.getPrecio());
-            existeProducto.setStock(entity.getStock());
-            existeProducto.setStockCritico(entity.getStockCritico());
-            existeProducto.setCategoria(entity.getCategoria());
-            existeProducto.setImagen(entity.getImagen());
-
+            existeProducto.setCodigoProducto(entity.getCodigoProducto());
+            existeProducto.setNombreProducto(entity.getNombreProducto());
+            existeProducto.setDescripcionProducto(entity.getDescripcionProducto());
+            existeProducto.setPrecioProducto(entity.getPrecioProducto());
+            existeProducto.setStockProducto(entity.getStockProducto());
+            existeProducto.setStockCriticoProducto(entity.getStockCriticoProducto());
+            existeProducto.setCategoriaProducto(entity.getCategoriaProducto());
+            existeProducto.setImagenProducto(entity.getImagenProducto());
             Producto productoUpdate = productoRepository.save(existeProducto);
             return productoUpdate;
         });

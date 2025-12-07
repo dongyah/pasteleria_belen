@@ -27,25 +27,25 @@ public class CategoriaController {
     public Categoria postCategoria(@RequestBody Categoria entity) {        
         return CategoriaService.saveCategoria(entity);
     }
-    @GetMapping("/find/{id}")
-    public Optional<Categoria> getCategoriaId(@PathVariable Long id) {
-        return CategoriaService.findByIdCategoria(id);
+    @GetMapping("/find/{idCategoria}")
+    public Optional<Categoria> getCategoriaId(@PathVariable Long idCategoria) {
+        return CategoriaService.findByIdCategoria(idCategoria);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteCategoria(@PathVariable Long id){
-        CategoriaService.deleteCategoria(id);
+    @DeleteMapping("/delete/{idCategoria}")
+    public void deleteCategoria(@PathVariable Long idCategoria){
+        CategoriaService.deleteCategoria(idCategoria);
     }
     
     @Autowired
     private CategoriaRepository CategoriaRepository;
-    @PutMapping("/update/{id}")
+    @PutMapping("/update/{idCategoria}")
     public Optional<Object> 
-        putCategoria(@PathVariable Long id, @RequestBody Categoria entity) {
+        putCategoria(@PathVariable Long idCategoria, @RequestBody Categoria entity) {
         
-        return CategoriaRepository.findById(id)
+        return CategoriaRepository.findById(idCategoria)
         .map(existeCategoria->{
-            existeCategoria.setNombre(entity.getNombre());
+            existeCategoria.setNombreCategoria(entity.getNombreCategoria());
 
             Categoria CategoriaUpdate = CategoriaRepository.save(existeCategoria);
             return CategoriaUpdate;
@@ -53,9 +53,9 @@ public class CategoriaController {
     }
 
     @GetMapping("/search") 
-    public ResponseEntity<Categoria> getByNombrePath(@RequestParam String nombre) {
+    public ResponseEntity<Categoria> getByNombrePath(@RequestParam String nombreCategoria) {
         
-        Optional<Categoria> categoria = CategoriaRepository.findByNombre(nombre);
+        Optional<Categoria> categoria = CategoriaRepository.findByNombreCategoria(nombreCategoria);
         
         return categoria.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }

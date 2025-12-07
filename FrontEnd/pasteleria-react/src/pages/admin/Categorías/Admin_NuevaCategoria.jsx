@@ -7,7 +7,6 @@ import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
 import '../../../styles/Admin_NuevoProducto.css'; 
 
-// URL base de tu backend Spring Boot
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Admin_NuevaCategoria() {

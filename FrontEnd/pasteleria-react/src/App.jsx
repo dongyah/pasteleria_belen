@@ -12,6 +12,8 @@ import Registro from "./pages/Tienda/Registro";
 import Login from "./pages/Tienda/Login";
 import Contacto from "./pages/Tienda/Contacto";
 import ProDetalle from "./pages/Tienda/ProDetalle";
+import Checkout from "./pages/Tienda/Checkout";
+import Confirmacion from "./pages/Tienda/Confirmacion";
 
 // Componentes del panel administrativo
 import Admin_Dashboard from "./pages/admin/Admin_Dashboard";
@@ -29,6 +31,7 @@ import Admin_HistorialCompras from "./pages/admin/Usuarios/Admin_HistorialCompra
 import Admin_NuevaCategoria from "./pages/admin/Categorías/Admin_NuevaCategoria";
 import Admin_GestionCategorias from "./pages/admin/Categorías/Admin_GestionCategoria";
 import Admin_EditarCategoria from "./pages/admin/Categorías/Admin_EditarCategoria";
+
 
 // Estilos
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -58,6 +61,9 @@ function App() {
           	<Route path='/login' element={<Login />} />
           	<Route path='/contacto' element={<Contacto />} />
           	<Route path='/producto-detalle' element={<ProDetalle />} />
+
+          	<Route path='/checkout' element={<Checkout />} />
+          	<Route path='/confirmacion/:orderId' element={<Confirmacion />} />
 
           	{/* ---------- RUTAS ADMINISTRATIVAS ---------- */}
           	<Route path='/admin' element={<Admin_Dashboard />} />

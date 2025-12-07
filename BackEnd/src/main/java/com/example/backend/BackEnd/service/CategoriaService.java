@@ -20,16 +20,16 @@ public class CategoriaService {
     }
 
     public Categoria saveCategoria(Categoria categoria) {
-        categoria.setId(null);
+        categoria.setIdCategoria(null);
         return categoriaRepository.save(categoria);
     }
 
-    public Optional<Categoria> findByIdCategoria(Long id) {
-        return categoriaRepository.findById(id);
+    public Optional<Categoria> findByIdCategoria(Long idCategoria) {
+        return categoriaRepository.findById(idCategoria);
     }
 
-    public void deleteCategoria(Long id) {
-        categoriaRepository.deleteById(id);
+    public void deleteCategoria(Long idCategoria) {
+        categoriaRepository.deleteById(idCategoria);
     }
     
 }

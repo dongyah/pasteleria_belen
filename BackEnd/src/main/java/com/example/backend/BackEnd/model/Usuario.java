@@ -18,20 +18,20 @@ public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long idUsuario;
     
-    private String nombre;
-    private String apellidos;
-    private LocalDate fechaNac;
-    private String rut;
-    private String correo;
-    private String telefono;
-    private String region;
-    private String comuna;
-    private String direccion;
-    private String password;
-    private String tipoUsuario;
-    private String codigoDescuento;
+    private String nombreUsuario;
+    private String apellidosUsuario;
+    private LocalDate fechaNacUsuario;
+    private String rutUsuario;
+    private String correoUsuario;
+    private String telefonoUsuario;
+    private String regionUsuario;
+    private String comunaUsuario;
+    private String direccionUsuario;
+    private String passwordUsuario;
+    private String tipoUsuarioUsuario;
+    private String codigoDescuentoUsuario;
 
     
 }

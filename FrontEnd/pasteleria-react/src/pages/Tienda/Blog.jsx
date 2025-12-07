@@ -1,45 +1,71 @@
 import React from 'react';
 import "../../styles/all.css";
-
-// 1. Importamos los componentes de navegación
+import { Link } from 'react-router-dom';
 import BarraNav from './BarraNav';
 import Footer from './Footer';
 
+// Datos de Blog estructurados
+const articulos = [
+    { id: 1, titulo: "Cake Painting: El Arte en el Postre", resumen: "¡Tendencia en pastelería! Esta técnica transforma los pasteles en obras de arte. Si buscas un toque moderno, ¡atrévete a probarla!", img: "img/pastel pintado.png", isFeatured: true }, // Destacado
+    { id: 2, titulo: "La Paciencia del Artesano", resumen: "En un mundo de prisas, nosotros elegimos la paciencia. Cada uno de nuestros postres es el resultado de la dedicación y el cuidado de lo artesanal.", img: "img/mision.png", isFeatured: false },
+    { id: 3, titulo: "Sabores que Despiertan Emociones", resumen: "Más que un simple dulce, cada bocado es una experiencia. Nuestros postres están creados para despertar tus sentidos y evocar momentos de felicidad.", img: "img/vision.png", isFeatured: false },
+    { id: 4, titulo: "Tesoro de la Tierra: Milhojas de Merquén", resumen: "¡Atención a todos los golosos! Lanzamos la línea 'Tesoro de la Tierra', inspirada en sabores tradicionales, con la audaz combinación dulce y picante del merquén.", img: "img/torta de manjar.png", isFeatured: false },
+    { id: 5, titulo: "Los Secretos de la Vainilla Pura", resumen: "Descubre por qué la vainilla natural es insustituible y cómo influye en el sabor final de nuestras tortas más vendidas. Calidad garantizada.", img: "img/torta de vainilla.png", isFeatured: false },
+];
+
 function Blog(){
-    return(
-    // 2. Envolvemos todo en un Fragment (<>)
+    
+    const articuloDestacado = articulos.find(a => a.isFeatured) || articulos[0];
+    const listaArticulos = articulos.filter(a => !a.isFeatured);
+
+    return(
     <>
       <BarraNav />
+        <main className="blog-main-content">
+            
+            {/* === 1. BANNER PRINCIPAL / TÍTULO === */}
+            <div className="blog-page-header">
+                <h1 className="blog-page-title">Blog de Maestros Pasteleros</h1>
+                <p className="blog-page-subtitle">Exclusividad, arte e innovación en la repostería fina.</p>
+            </div>
 
-        <main>
-            <h2 className="titulo-blog">Blog</h2>
-            <div className="blog-container">
+            {/* === 2. ARTÍCULO DESTACADO (Diseño de Alto Impacto) === */}
+            <section className="blog-featured">
+                <div className="featured-image-box">
+                    <img src={articuloDestacado.img} alt={articuloDestacado.titulo} className="featured-image" />
+                </div>
+                <div className="featured-text-box">
+                    <span className="blog-tag">Tendencia</span>
+                    <h2 className="featured-title">{articuloDestacado.titulo}</h2>
+                    <p className="featured-summary">{articuloDestacado.resumen}</p>
+                    <Link to={`/blog/${articuloDestacado.id}`} className="btn btn-featured">Leer Artículo Completo</Link>
+                </div>
+            </section>
+            
+            {/* --- Separador --- */}
+            <hr className="divider-short" />
 
-                <div className="blog-card">
-                    <h3>Caso N°1</h3>
-                    <p>¡Tendencia en pastelería! El «cake painting» está ganando popularidad. Esta técnica, que utiliza pinceles y colorantes comestibles, transforma los pasteles en obras de arte. Si buscas un toque moderno, ¡atrévete a probarla!</p>
-                </div>
+            {/* === 3. LISTADO DE ARTÍCULOS (Grid de Lista) === */}
+            <section className="blog-list-section">
+                <h2 className="section-title color-primary">Otros Temas de Interés</h2>
+                
+                <div className="blog-grid-list">
+                    {listaArticulos.map(articulo => (
+                        <Link to={`/blog/${articulo.id}`} key={articulo.id} className="list-card">
+                            <img src={articulo.img} alt={articulo.titulo} className="list-card-img" />
+                            <div className="list-card-content">
+                                <h3 className="list-card-title">{articulo.titulo}</h3>
+                                <p className="list-card-summary">{articulo.resumen}</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
 
-                <div className="blog-card">
-                    <h3>Caso N°2</h3>
-                    <p>En un mundo de prisas, nosotros elegimos la paciencia. Cada uno de nuestros postres es el resultado de la dedicación y el cuidado de lo artesanal, donde el amor por los detalles se convierte en el ingrediente principal. Te invitamos a saborear la diferencia.</p>
-                </div>
-
-                <div className="blog-card">
-                    <h3>Caso N°3</h3>
-                    <p>Más que un simple dulce, cada bocado es una experiencia. Nuestros postres están creados para despertar tus sentidos y evocar momentos de felicidad, convirtiendo un simple gusto en un viaje inolvidable lleno de sabor y alegría.</p>
-                </div>
-
-                <div className="blog-card large">
-                    <h3>Caso N°4</h3>
-                    <p>¡Atención a todos los golosos de corazón! Les tenemos una noticia que les va a endulzar el día. En nuestra pastelería chilena, le dimos una vuelta de tuerca a nuestros clásicos de siempre. Lanzamos la línea "Tesoro de la Tierra", inspirada en los sabores más ricos y tradicionales de nuestro país, pero con un toque moderno que te va a volar la cabeza. La joya de la corona es nuestro nuevo "Milhojas de Merquén". Imagínate, la crocancia del milhojas con la calidez del merquén, ofreciendo una experiencia dulce y picantita que no vas a olvidar. Este postre ya está dando que hablar en el mundo de la repostería chilena por su combinación audaz. ¡No te quedes con las ganas! Pégate una vuelta por nuestro blog para cachar todos los detalles de esta locura y para ver las recetas exclusivas.</p>
-                </div>
-
-            </div>
-        </main>
+        </main>
 
       <Footer />
     </>
-    )
+    )
 }
 export default Blog;
