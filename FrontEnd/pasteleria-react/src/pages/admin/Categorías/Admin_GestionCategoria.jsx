@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral'; 
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está disponible
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_Gestion.css';
 
@@ -14,6 +15,7 @@ function Admin_GestionCategorias() {
     const [error, setError] = useState(null);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false); 
 
+    // Carga de SweetAlert2
     useEffect(() => {
         if (!window.Swal) {
             const swalScript = document.createElement("script");
@@ -26,13 +28,15 @@ function Admin_GestionCategorias() {
         }
     }, []); 
 
+    // Fetch de categorías
     const fetchCategorias = async () => {
         setCargando(true);
         setError(null);
         try {
             const response = await axios.get(`${API_BASE_URL}/categorias/all`);
-            
-            setCategorias(response.data);
+            // Nota: Asumimos que el backend puede devolver 'nombre' o 'nombreCategoria'.
+            // Usamos lo que esté disponible.
+            setCategorias(response.data); 
         } catch (err) {
             console.error("Error al cargar categorías:", err.response || err);
             
@@ -49,6 +53,7 @@ function Admin_GestionCategorias() {
         }
     }, [isScriptLoaded]); 
     
+    // Handler de eliminación
     const handleDelete = async (idCategoria) => {
         if (!isScriptLoaded || !window.Swal) {
             console.error('SweetAlert2 no está cargado.');
@@ -69,7 +74,7 @@ function Admin_GestionCategorias() {
 
         if (result.isConfirmed) {
             try {
-                // 2. Llamada DELETE al Backend
+                // Llamada DELETE al Backend
                 await axios.delete(`${API_BASE_URL}/categorias/delete/${idCategoria}`); 
                 
                 setCategorias(categorias.filter(c => c.id !== idCategoria));
@@ -83,6 +88,12 @@ function Admin_GestionCategorias() {
         }
     };
     
+    // Función de ayuda para obtener el nombre (priorizando 'nombreCategoria' si existe)
+    const getNombre = (categoria) => {
+        return categoria.nombreCategoria || categoria.nombre || 'Nombre No Definido';
+    };
+
+
     if (cargando) {
         return (
             <div className="admin-layout">
@@ -110,7 +121,7 @@ function Admin_GestionCategorias() {
                     <div className="card shadow-sm">
                         <div className="card-header d-flex justify-content-between align-items-center">
                             <h5 className="mb-0">Gestión de Categorías ({categorias.length} Registradas)</h5>
-                            <Link to="/admin/nueva-categoria" className="btn btn-success">Nueva Categoría</Link>
+                            <Link to="/admin/nueva-categoria" className="btn btn-primary">Nueva Categoría</Link>
                         </div>
                         <div className="card-body">
                             <div className="table-responsive">
@@ -127,7 +138,8 @@ function Admin_GestionCategorias() {
                                             categorias.map(categoria => (
                                                 <tr key={categoria.id}> 
                                                     <td className="text-center">{categoria.id}</td>
-                                                    <td>{categoria.nombre}</td>
+                                                    {/* --- CORRECCIÓN APLICADA AQUÍ --- */}
+                                                    <td>{getNombre(categoria)}</td> 
                                                     <td className="text-center">
                                                         {/* Navegación a la vista de edición */}
                                                         <Link to={`/admin/editar-categoria/${categoria.id}`} className="btn btn-sm btn-primary me-2">Editar</Link>

@@ -5,6 +5,8 @@ import com.example.backend.BackEnd.model.Orden;
 import com.example.backend.BackEnd.model.Usuario;
 import com.example.backend.BackEnd.repository.UsuarioRepository;
 import com.example.backend.BackEnd.service.UsuarioService;
+import com.example.backend.BackEnd.repository.OrdenRepository;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UsuarioController {
     
+    @Autowired
+    private OrdenRepository ordenRepository;
+
     @Autowired
     private UsuarioService UsuarioService;
     @GetMapping("/all")
@@ -71,7 +76,7 @@ public class UsuarioController {
         public ResponseEntity<?> login(@RequestBody AuthenticationRequest authenticationRequest) {
             
             // 1. Buscar usuario por correo (asumo que tienes este método en tu Repositorio)
-            Optional<Usuario> usuarioOpt = UsuarioRepository.findByCorreo(authenticationRequest.getCorreo());
+            Optional<Usuario> usuarioOpt = UsuarioRepository.findByCorreoUsuario(authenticationRequest.getCorreo());
 
             if (usuarioOpt.isEmpty()) {
                 // Usuario no encontrado (401 Unauthorized o 404 Not Found)
@@ -95,11 +100,14 @@ public class UsuarioController {
         }
 
     @GetMapping("/{idUsuario}/historial")
-    public ResponseEntity<List<Orden>> getHistorialCompras(@PathVariable Long idUsuario) {
-        // Lógica para buscar todas las órdenes relacionadas con ese usuarioId
-        List<Orden> historial = OrdenRepository.findByIdUsuarioOrderByFechaCompraDesc(idUsuario);
-        return ResponseEntity.ok(historial);
-}    
+        public ResponseEntity<List<Orden>> getHistorialCompras(@PathVariable Long idUsuario) {
+            
+            // Busca el historial de compras del usuario
+            List<Orden> historial = ordenRepository.findByIdUsuarioOrderByFechaCompraDesc(idUsuario);
+            
+            return ResponseEntity.ok(historial);
+        }    
+       
     
     
 }

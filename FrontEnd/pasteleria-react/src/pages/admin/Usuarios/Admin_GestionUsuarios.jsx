@@ -9,7 +9,7 @@ import '../../../styles/Admin_Gestion.css';
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Admin_GestionUsuarios() {
-   
+    
     const [usuarios, setUsuarios] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -86,7 +86,7 @@ function Admin_GestionUsuarios() {
                 // Llamada DELETE al Backend
                 await axios.delete(`${API_BASE_URL}/usuarios/delete/${idUsuario}`); 
                 
-                //Actualización de estado y mensaje de éxito
+                // Actualización de estado y mensaje de éxito
                 setUsuarios(usuarios.filter(u => (u.id || u.idUsuario) !== idUsuario));
                 window.Swal.fire('¡Eliminado!', 'El usuario ha sido eliminado correctamente.', 'success');
 
@@ -99,6 +99,8 @@ function Admin_GestionUsuarios() {
         }
     };
     
+    const getUsuarioId = (usuario) => usuario.id || usuario.idUsuario;
+
     if (cargando) {
         return (
             <div className="admin-layout">
@@ -126,7 +128,7 @@ function Admin_GestionUsuarios() {
                     <div className="card shadow-sm">
                         <div className="card-header d-flex justify-content-between align-items-center">
                             <h5 className="mb-0">Gestión de Usuarios ({usuarios.length} Registrados)</h5>
-                            <Link to="/admin/nuevo-usuario" className="btn btn-success">Nuevo Usuario</Link>
+                            <Link to="/admin/nuevo-usuario" className="btn btn-primary">Nuevo Usuario</Link>
                         </div>
                         <div className="card-body">
                             <div className="table-responsive">
@@ -150,26 +152,26 @@ function Admin_GestionUsuarios() {
                                     <tbody>
                                         {usuarios.length > 0 ? (
                                             usuarios.map(usuario => (
-                                                <tr key={usuario.id || usuario.idUsuario}> 
-                                                    <td className="text-center">{usuario.id || usuario.idUsuario}</td>
-                                                    <td>{usuario.nombre}</td>
-                                                    <td>{usuario.apellidos}</td>
-                                                    {/* Formato de fecha: */}
-                                                    <td>{usuario.fechaNac ? new Date(usuario.fechaNac).toLocaleDateString('es-CL') : 'N/A'}</td> 
-                                                    <td className="text-center">{usuario.rut}</td> 
-                                                    <td>{usuario.correo}</td>
-                                                    <td>{usuario.telefono || 'N/A'}</td>
-                                                    <td>{usuario.region || 'N/A'}</td>
-                                                    <td>{usuario.comuna || 'N/A'}</td>
-                                                    <td>{usuario.direccion}</td>
-                                                    <td className="text-center">{usuario.tipoUsuario}</td> 
-                                                    <td className="text-center">
-                                                        <Link to={`/admin/editar-usuario/${usuario.id || usuario.idUsuario}`} className="btn btn-sm btn-primary me-2">Editar</Link>
-                                                        <Link to={`/admin/historial-compras/${usuario.id || usuario.idUsuario}`} className="btn btn-sm btn-info me-2">Historial</Link>
+                                                <tr key={getUsuarioId(usuario)}> 
+                                                    <td className="text-center">{getUsuarioId(usuario)}</td>
+                                                    {/* --- CORRECCIONES APLICADAS AQUÍ --- */}
+                                                    <td>{usuario.nombreUsuario}</td>
+                                                    <td>{usuario.apellidosUsuario}</td>
+                                                    <td>{usuario.fechaNacUsuario ? new Date(usuario.fechaNacUsuario).toLocaleDateString('es-CL') : 'N/A'}</td> 
+                                                    <td className="text-center">{usuario.rutUsuario}</td> 
+                                                    <td>{usuario.correoUsuario}</td>
+                                                    <td>{usuario.telefonoUsuario || 'N/A'}</td>
+                                                    <td>{usuario.regionUsuario || 'N/A'}</td>
+                                                    <td>{usuario.comunaUsuario || 'N/A'}</td>
+                                                    <td>{usuario.direccionUsuario}</td>
+                                                    <td className="text-center">{usuario.tipoUsuarioUsuario}</td> 
+                                                    <td className="text-center acciones-columna">
+                                                        <Link to={`/admin/editar-usuario/${getUsuarioId(usuario)}`} className="btn btn-sm btn-primary me-2">Editar</Link>
+                                                        <Link to={`/admin/historial-compras/${getUsuarioId(usuario)}`} className="btn btn-sm btn-info me-2">Historial</Link>
                                                         
                                                         <button 
                                                             className="btn btn-sm btn-danger"
-                                                            onClick={() => handleDelete(usuario.id || usuario.idUsuario)} 
+                                                            onClick={() => handleDelete(getUsuarioId(usuario))} 
                                                         >
                                                             Eliminar
                                                         </button>

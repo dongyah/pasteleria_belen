@@ -2,40 +2,71 @@ import React, { useState } from "react";
 import "../../styles/all.css";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
-import Swal from 'sweetalert2'; // Asumimos que Swal está cargado
+import Swal from 'sweetalert2'; 
+import axios from 'axios'; // Importar Axios
+
+// URL base de tu backend (Ajustar si es necesario)
+const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Contacto() {
     const [formData, setFormData] = useState({
-        nombre: '',
-        correo: '',
-        asunto: '', // Agregamos un campo Asunto
-        mensaje: ''
+        nombreContacto: '',
+        correoContacto: '',
+        asuntoContacto: '', 
+        mensajeContacto: ''
     });
+
+    const [isSubmitting, setIsSubmitting] = useState(false); // Estado para controlar el envío
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => { // Función ahora es async
         e.preventDefault();
         
-        // Simulación de validación
-        if (!formData.nombre || !formData.correo || !formData.mensaje) {
+        // 1. Validación básica
+        if (!formData.nombreContacto || !formData.correoContacto || !formData.mensajeContacto) {
             Swal.fire('Error', 'Por favor, completa los campos obligatorios.', 'error');
             return;
         }
 
-        // Aquí iría la llamada a la API de envío de correo (ej: axios.post('/api/contacto', formData))
+        setIsSubmitting(true); // Bloquear el botón
+        
+        try {
+            // 2. Llamada a la API (Asumo /api/v1/contacto o /api/contacto)
+            // Usaremos /contacto para seguir la convención de tu comentario
+            const response = await axios.post(`${API_BASE_URL}/contacto/save`, formData); 
+            
+            // 3. Respuesta exitosa
+            Swal.fire({
+                title: 'Mensaje Enviado',
+                text: 'Gracias por contactarnos. Responderemos a tu solicitud lo antes posible.',
+                icon: 'success'
+            });
 
-        Swal.fire({
-            title: 'Mensaje Enviado',
-            text: 'Gracias por contactarnos. Responderemos a tu solicitud lo antes posible.',
-            icon: 'success'
-        });
+            // Limpiar el formulario
+            setFormData({ nombreContacto: '', correoContacto: '', asuntoContacto: '', mensajeContacto: '' });
 
-        // Limpiar el formulario
-        setFormData({ nombre: '', correo: '', asunto: '', mensaje: '' });
+        } catch (error) {
+            // 4. Manejo de errores de la API
+            console.error("Error al enviar el formulario:", error.response || error);
+            
+            let errorMsg = 'No se pudo enviar el mensaje. Inténtelo más tarde o revise la conexión.';
+            if (error.response && error.response.status === 400) {
+                 errorMsg = 'Error en los datos enviados. Verifique su correo.';
+            }
+
+            Swal.fire({
+                title: 'Error de Envío',
+                text: errorMsg,
+                icon: 'error'
+            });
+
+        } finally {
+            setIsSubmitting(false); // Desbloquear el botón
+        }
     };
 
     // URL de ejemplo para Google Maps (similar al footer)
@@ -51,7 +82,7 @@ function Contacto() {
 
                 <div className="contacto-grid">
                     
-                    {/* 1. INFORMACIÓN DE CONTACTO DIRECTA */}
+                    {/* 1. INFORMACIÓN DE CONTACTO DIRECTA (Se mantiene igual) */}
                     <div className="contacto-info-box">
                         <h2 className="info-title">Información Directa</h2>
                         <p className="info-detail">
@@ -91,31 +122,33 @@ function Contacto() {
                         <form id="form-contacto" onSubmit={handleSubmit}>
                             
                             <input 
-                                type="text" id="nombre" name="nombre" 
-                                placeholder="Nombre completo *" value={formData.nombre} 
+                                type="text" id="nombreContacto" name="nombreContacto" 
+                                placeholder="Nombre completo *" value={formData.nombreContacto} 
                                 onChange={handleChange} required 
                             />
                             
                             <input 
-                                type="email" id="correo" name="correo" 
-                                placeholder="Correo electrónico *" value={formData.correo} 
+                                type="email" id="correoContacto" name="correoContacto" 
+                                placeholder="Correo electrónico *" value={formData.correoContacto} 
                                 onChange={handleChange} required 
                             />
                             
                             <input 
-                                type="text" id="asunto" name="asunto" 
-                                placeholder="Asunto (Pedido, Consulta, Feedback)" value={formData.asunto} 
+                                type="text" id="asuntoContacto" name="asuntoContacto" 
+                                placeholder="Asunto (Pedido, Consulta, Feedback)" value={formData.asuntoContacto} 
                                 onChange={handleChange} 
                             />
                             
                             <textarea 
-                                id="mensaje" name="mensaje" 
+                                id="mensajeContacto" name="mensajeContacto" 
                                 placeholder="Escribe tu mensaje o detalle tu pedido especial aquí..." 
-                                value={formData.mensaje}
+                                value={formData.mensajeContacto}
                                 onChange={handleChange} required
                             ></textarea>
 
-                            <button type="submit" className="btn btn-contacto-submit">Enviar Mensaje</button>
+                            <button type="submit" className="btn btn-contacto-submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Enviando...' : 'Enviar Mensaje'}
+                            </button>
                         </form>
                     </div>
 

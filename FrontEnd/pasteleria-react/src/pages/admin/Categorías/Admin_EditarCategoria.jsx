@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está cargado
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
-import '../../../styles/Admin_NuevoProducto.css'; // Usamos los estilos de los formularios
+import '../../../styles/Admin_NuevoProducto.css'; 
 
 // URL base de tu backend Spring Boot
 const API_BASE_URL = 'http://localhost:8015/api/v1';
@@ -14,12 +15,15 @@ function Admin_EditarCategoria() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
-    const [nombre, setNombre] = useState('');
+    // --- ESTADOS: Usamos la convención 'nombreCategoria' para el estado ---
+    const [nombreCategoria, setNombreCategoria] = useState(''); 
+    
+    // --- ESTADOS DE CONTROL ---
     const [cargando, setCargando] = useState(true); 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
+    // Carga de SweetAlert2
     useEffect(() => {
         const loadScripts = () => {
              if (!window.Swal) {
@@ -38,29 +42,35 @@ function Admin_EditarCategoria() {
         loadScripts();
     }, []);
 
+    // --- 1. Carga la Categoría Inicial (GET) ---
     useEffect(() => {
         const fetchCategoria = async () => {
             setCargando(true);
+            // Esperamos que Swal esté listo para manejar errores
+            if (!isScriptLoaded) return; 
+
             try {
+                // GET: /api/v1/categorias/find/{id}
                 const response = await axios.get(`${API_BASE_URL}/categorias/find/${id}`);
                 const data = response.data;
                 
-
-                setNombre(data.nombre || ''); 
+                // Rellenar el estado: Asumimos que el campo se llama 'nombreCategoria' o 'nombre'
+                setNombreCategoria(data.nombreCategoria || data.nombre || ''); 
 
             } catch (error) {
                 console.error("Error al cargar la categoría:", error.response || error);
-                if (window.Swal) {
-                     window.Swal.fire('Error de Carga', `Categoría ID ${id} no encontrada o error de conexión.`, 'error');
-                }
+                window.Swal.fire('Error de Carga', `Categoría ID ${id} no encontrada o error de conexión.`, 'error');
             } finally {
                 setCargando(false);
             }
         };
 
-        fetchCategoria();
-    }, [id]);
+        if (isScriptLoaded) {
+            fetchCategoria();
+        }
+    }, [id, isScriptLoaded]);
 
+    // --- 2. Handler de Envío (PUT) ---
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -69,9 +79,8 @@ function Admin_EditarCategoria() {
              return;
         }
 
-        const validarCampoVacio = (texto) => texto.trim() !== '';
-        
-        if (!validarCampoVacio(nombre)) {
+        // Validación de campo usando el estado corregido
+        if (!nombreCategoria.trim()) {
             window.Swal.fire('Error de Validación', 'El nombre de la categoría es obligatorio.', 'error');
             return;
         }
@@ -87,12 +96,17 @@ function Admin_EditarCategoria() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
+                    // --- PAYLOAD AJUSTADO ---
                     const categoriaPayload = {
-                        nombre: nombre, 
+                        // Enviamos el nombre con el sufijo (o sin él, dependiendo de la entidad)
+                        // Si tu entidad usa 'nombreCategoria' en el PUT, usa el primer caso.
+                        // Si usa 'nombre', usa el segundo caso.
+                        nombreCategoria: nombreCategoria, 
+                        // nombre: nombreCategoria, // Opción B: Si la entidad usa 'nombre'
                     };
                     
+                    // PUT: /api/v1/categorias/update/{id}
                     await axios.put(`${API_BASE_URL}/categorias/update/${id}`, categoriaPayload);
-
 
                     window.Swal.fire('¡Actualizado!', 'La categoría ha sido modificada.', 'success')
                         .then(() => navigate('/admin/categorias')); // Redirigir al listado
@@ -106,7 +120,6 @@ function Admin_EditarCategoria() {
             }
             setIsSubmitting(false);
         });
-        
     };
 
     if (cargando) {
@@ -133,18 +146,19 @@ function Admin_EditarCategoria() {
                         </Link>
                     </div>
 
-                    <h1 className="titulo-admin">Editar Categoría</h1>
+                    <h1 className="titulo-admin">Editar Categoría ID: {id}</h1>
                     <section className="seccion-formulario">
                         <form className="formulario-usuario producto" onSubmit={handleSubmit} noValidate>
                             
                             <div className="fila-formulario" style={{maxWidth: '400px', margin: '0 auto'}}>
                                 <input 
                                     type="text" 
-                                    name="nombre" 
+                                    name="nombreCategoria" // CLAVE: Usamos el nombre del campo corregido
                                     placeholder="Nombre de la Categoría" 
-                                    value={nombre} 
-                                    onChange={(e) => setNombre(e.target.value)}
+                                    value={nombreCategoria} 
+                                    onChange={(e) => setNombreCategoria(e.target.value)} // Actualiza el estado corregido
                                     disabled={isSubmitting || cargando}
+                                    required
                                     style={{width: '100%'}}
                                 />
                             </div>

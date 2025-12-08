@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Admin_BarraLateral from '../Admin_BarraLateral';
+import Admin_BarraLateral from '../Admin_BarraLateral'; // Asumo que este componente existe
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está cargado
 
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
@@ -13,8 +14,8 @@ function Admin_NuevaCategoria() {
 
     const navigate = useNavigate();
 
-
-    const [nombre, setNombre] = useState('');
+    // --- ESTADO CORREGIDO: Usamos la convención 'nombreCategoria' para el estado ---
+    const [nombreCategoria, setNombreCategoria] = useState(''); 
 
 
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
@@ -23,30 +24,20 @@ function Admin_NuevaCategoria() {
 
 
     useEffect(() => {
+        // Carga de SweetAlert2
         const loadScripts = () => {
-
              if (!window.Swal) {
                  const swalScript = document.createElement("script");
                  swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
                  swalScript.async = true;
                  document.body.appendChild(swalScript);
              }
-
-             let scriptTag = document.querySelector("script[src='/js/Admin.js']");
-             if (!scriptTag) {
-                 scriptTag = document.createElement("script");
-                 scriptTag.src = "/js/Admin.js";
-                 scriptTag.async = true;
-                 scriptTag.onload = () => setIsScriptLoaded(true);
-                 document.body.appendChild(scriptTag);
-             } else {
-                 const checkReady = setInterval(() => {
-                     if (window.Swal) {
-                         setIsScriptLoaded(true);
-                         clearInterval(checkReady);
-                     }
-                 }, 100);
-             }
+             const checkReady = setInterval(() => {
+                 if (window.Swal) {
+                     setIsScriptLoaded(true);
+                     clearInterval(checkReady);
+                 }
+             }, 100);
         };
         loadScripts();
     }, []);
@@ -60,9 +51,8 @@ function Admin_NuevaCategoria() {
              return;
         }
 
-        const validarCampoVacio = (texto) => texto.trim() !== '';
-        
-        if (!validarCampoVacio(nombre)) {
+        // Validación de campo usando el estado corregido
+        if (!nombreCategoria.trim()) {
             window.Swal.fire('Error de Validación', 'El nombre de la categoría es obligatorio.', 'error');
             return;
         }
@@ -70,22 +60,23 @@ function Admin_NuevaCategoria() {
         setIsSubmitting(true);
         
         try {
+            // --- PAYLOAD AJUSTADO ---
             const categoriaPayload = {
-                nombre: nombre, 
+                nombreCategoria: nombreCategoria, // CLAVE: Enviamos el nombre con el sufijo
             };
             
+            // Llamada POST al Backend
             const response = await axios.post(`${API_BASE_URL}/categorias/save`, categoriaPayload);
-
 
             const categoriaCreada = response.data;
             
             window.Swal.fire(
                 '¡Categoría Creada!', 
-                `La categoría "${categoriaCreada.nombre}" (ID: ${categoriaCreada.id || 'N/A'}) fue guardada.`, 
+                `La categoría "${categoriaCreada.nombreCategoria}" (ID: ${categoriaCreada.id || 'N/A'}) fue guardada.`, 
                 'success'
             );
             
-            setNombre('');
+            setNombreCategoria(''); // Limpiamos el estado
             navigate('/admin/categorias'); 
 
         } catch (error) {
@@ -126,11 +117,12 @@ function Admin_NuevaCategoria() {
                             <div className="fila-formulario" style={{maxWidth: '400px', margin: '0 auto'}}>
                                 <input 
                                     type="text" 
-                                    name="nombre" 
+                                    name="nombreCategoria" // CLAVE: Nombre del input para coincidir con el estado
                                     placeholder="Nombre de la Categoría" 
-                                    value={nombre} 
-                                    onChange={(e) => setNombre(e.target.value)}
+                                    value={nombreCategoria} 
+                                    onChange={(e) => setNombreCategoria(e.target.value)} // Actualiza el estado corregido
                                     style={{width: '100%'}}
+                                    required
                                 />
                             </div>
                             

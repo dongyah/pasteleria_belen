@@ -32,7 +32,7 @@ public class Orden {
     // Indica qué usuario realizó la compra (si estaba logueado)
     @ManyToOne
     @JoinColumn(name = "id_usuario")
-    private Usuario usuario; 
+    private Usuario idUsuario; 
 
     private String codigoBoleta; // ORDERXXXXXX
     private LocalDateTime fechaCompra;

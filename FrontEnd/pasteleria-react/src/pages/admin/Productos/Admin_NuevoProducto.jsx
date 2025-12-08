@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Admin_BarraLateral from '../Admin_BarraLateral';
+import Admin_BarraLateral from '../Admin_BarraLateral'; // Asumo que este componente existe
 import axios from 'axios'; 
+import Swal from 'sweetalert2'; // Asumo que SweetAlert2 está disponible
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoProducto.css';
 
@@ -12,56 +13,42 @@ function Admin_NuevoProducto() {
 
     const navigate = useNavigate();
 
+    // --- ESTADO: AJUSTADO A LA CONVENCIÓN DEL BACKEND (Ej: nombreProducto) ---
     const [formData, setFormData] = useState({
-        codigo: '',
-        nombre: '',
-        descripcion: '',
-        precio: '',
-        stock: '',
-        stockCritico: '',
-        categoria: '',
-        imagen: '', 
+        codigoProducto: '',
+        nombreProducto: '',
+        descripcionProducto: '',
+        precioProducto: '',
+        stockProducto: '',
+        stockCriticoProducto: '',
+        nombreCategoria: '', // Usamos nombreCategoria para el select
+        imagenProducto: '', // Contiene el Base64 de la imagen
     });
 
-    // --- ESTADO PARA ALMACENAR LAS CATEGORÍAS DE LA BD ---
+    // --- ESTADOS DE CONTROL ---
     const [categoriasBD, setCategoriasBD] = useState([]); 
-
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false); 
 
 
-
+    // --- 1. Carga de Scripts y Librerías (Swal) ---
     useEffect(() => {
-
-        const loadScripts = () => {
-
-             if (!window.Swal) {
-                 const swalScript = document.createElement("script");
-                 swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
-                 swalScript.async = true;
-                 document.body.appendChild(swalScript);
+        if (!window.Swal) {
+            const swalScript = document.createElement("script");
+            swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
+            swalScript.async = true;
+            document.body.appendChild(swalScript);
+        }
+        const checkReady = setInterval(() => {
+             if (window.Swal) {
+                 setIsScriptLoaded(true);
+                 clearInterval(checkReady);
              }
-
-             let scriptTag = document.querySelector("script[src='/js/Admin.js']");
-             if (!scriptTag) {
-                 scriptTag = document.createElement("script");
-                 scriptTag.src = "/js/Admin.js";
-                 scriptTag.async = true;
-                 scriptTag.onload = () => setIsScriptLoaded(true);
-                 document.body.appendChild(scriptTag);
-             } else {
-                 const checkReady = setInterval(() => {
-                     if (window.Swal) {
-                         setIsScriptLoaded(true);
-                         clearInterval(checkReady);
-                     }
-                 }, 100);
-             }
-        };
-        loadScripts();
+         }, 100);
     }, []);
     
+    // --- 2. Carga las Categorías desde el Backend ---
     useEffect(() => {
         const fetchCategorias = async () => {
             try {
@@ -70,14 +57,22 @@ function Admin_NuevoProducto() {
                 setCategoriasBD(response.data);
             } catch (error) {
                 console.error("Error al cargar las categorías:", error);
-                setMensaje({ texto: 'Error al cargar las categorías desde el servidor.', tipo: 'error' });
+                // Usamos Swal si está cargado
+                if (isScriptLoaded && window.Swal) {
+                    window.Swal.fire('Error', 'Error al cargar las categorías desde el servidor.', 'error');
+                } else {
+                    setMensaje({ texto: 'Error al cargar las categorías desde el servidor.', tipo: 'error' });
+                }
             }
         };
 
-        fetchCategorias();
-    }, []); 
+        if (isScriptLoaded) {
+            fetchCategorias();
+        }
+    }, [isScriptLoaded]); 
 
 
+    // --- 3. HANDLER: Maneja los cambios en todos los inputs ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevData => ({
@@ -87,85 +82,82 @@ function Admin_NuevoProducto() {
     };
 
 
+    // --- 4. HANDLER: Captura el archivo y lo convierte a Base64 ---
     const handleImageChange = (event) => {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                 setFormData(prevData => ({ ...prevData, imagen: reader.result }));
+                 setFormData(prevData => ({ ...prevData, imagenProducto: reader.result }));
             };
             reader.readAsDataURL(file);
         } else {
-            setFormData(prevData => ({ ...prevData, imagen: '' }));
+            setFormData(prevData => ({ ...prevData, imagenProducto: '' }));
         }
     };
 
 
-
+    // --- 5. HANDLER: Envío y Validación ---
     const handleSubmit = async (event) => {
         event.preventDefault();
-        setMensaje({ texto: '', tipo: '' });
+        setMensaje({ texto: '', tipo: '' }); // Limpiar mensaje de error/éxito
 
-        
+        // --- VALIDACIONES ---
         const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
         
-        if (!formData.codigo.trim() || formData.codigo.length < 3) {
-            setMensaje({ texto: 'El código debe tener al menos 3 caracteres.', tipo: 'error' });
-            return;
+        if (!formData.codigoProducto.trim() || formData.codigoProducto.length < 3) {
+            window.Swal.fire('Error', 'El código debe tener al menos 3 caracteres.', 'error'); return;
         }
-        if (!formData.nombre.trim() || formData.nombre.length > 100) {
-            setMensaje({ texto: 'El nombre es obligatorio y no puede superar los 100 caracteres.', tipo: 'error' });
-            return;
+        if (!formData.nombreProducto.trim() || formData.nombreProducto.length > 100) {
+            window.Swal.fire('Error', 'El nombre es obligatorio y no puede superar los 100 caracteres.', 'error'); return;
         }
-        if (formData.descripcion.length > 500) {
-            setMensaje({ texto: 'La descripción no puede superar los 500 caracteres.', tipo: 'error' });
-            return;
+        if (formData.descripcionProducto.length > 500) {
+            window.Swal.fire('Error', 'La descripción no puede superar los 500 caracteres.', 'error'); return;
         }
-        if (!formData.categoria) {
-            setMensaje({ texto: 'Debe seleccionar una categoría.', tipo: 'error' });
-            return;
+        if (!formData.nombreCategoria) { // Usamos nombreCategoria
+            window.Swal.fire('Error', 'Debe seleccionar una categoría.', 'error'); return;
         }
-        if (!isNumeric(formData.precio) || parseFloat(formData.precio) < 0) {
-            setMensaje({ texto: 'El precio es obligatorio y debe ser un número mayor o igual a 0.', tipo: 'error' });
-            return;
+        if (!isNumeric(formData.precioProducto) || parseFloat(formData.precioProducto) < 0) {
+            window.Swal.fire('Error', 'El precio es obligatorio y debe ser un número mayor o igual a 0.', 'error'); return;
         }
-        if (!isNumeric(formData.stock) || parseInt(formData.stock, 10) < 0 || !Number.isInteger(parseFloat(formData.stock))) {
-            setMensaje({ texto: 'El stock debe ser un número entero mayor o igual a 0.', tipo: 'error' });
-            return;
+        if (!isNumeric(formData.stockProducto) || parseInt(formData.stockProducto, 10) < 0 || !Number.isInteger(parseFloat(formData.stockProducto))) {
+            window.Swal.fire('Error', 'El stock debe ser un número entero mayor o igual a 0.', 'error'); return;
         }
-        // Validación Stock Crítico
-        if (formData.stockCritico && (!isNumeric(formData.stockCritico) || parseInt(formData.stockCritico, 10) < 0 || !Number.isInteger(parseFloat(formData.stockCritico)))) {
-            setMensaje({ texto: 'El stock crítico debe ser un número entero mayor o igual a 0.', tipo: 'error' });
-            return;
+        if (formData.stockCriticoProducto && (!isNumeric(formData.stockCriticoProducto) || parseInt(formData.stockCriticoProducto, 10) < 0 || !Number.isInteger(parseFloat(formData.stockCriticoProducto)))) {
+            window.Swal.fire('Error', 'El stock crítico debe ser un número entero mayor o igual a 0.', 'error'); return;
         }
-        
+        // --- FIN VALIDACIONES ---
 
         setIsSubmitting(true);
         
         try {
+            // --- PAYLOAD AJUSTADO AL BACKEND ---
             const productoPayload = {
-                codigo: formData.codigo,
-                nombre: formData.nombre,
-                descripcion: formData.descripcion || null,
-                precio: parseInt(formData.precio), 
-                stock: parseInt(formData.stock, 10),
-                stockCritico: formData.stockCritico ? parseInt(formData.stockCritico, 10) : null,
-                categoria: formData.categoria, 
-                imagen: formData.imagen || null, 
+                codigoProducto: formData.codigoProducto,
+                nombreProducto: formData.nombreProducto,
+                descripcionProducto: formData.descripcionProducto || null,
+                precioProducto: parseInt(formData.precioProducto), 
+                stockProducto: parseInt(formData.stockProducto, 10),
+                // Solo enviamos stockCritico si tiene valor, sino null
+                stockCriticoProducto: formData.stockCriticoProducto ? parseInt(formData.stockCriticoProducto, 10) : null, 
+                nombreCategoria: formData.nombreCategoria, // El backend recibe el nombre de la categoría
+                imagenProducto: formData.imagenProducto || null, 
             };
             
+            // Llamada POST al Backend
             await axios.post(`${API_BASE_URL}/productos/save`, productoPayload);
 
-            setMensaje({ texto: '¡Producto creado con éxito! Redirigiendo...', tipo: 'exito' });
-            
-
-            setFormData({ codigo: '', nombre: '', descripcion: '', precio: '', stock: '', stockCritico: '', categoria: '', imagen: '' });
-            navigate('/admin/productos'); 
+            window.Swal.fire('¡Producto Creado!', 'El producto ha sido registrado con éxito.', 'success')
+                .then(() => {
+                    // Limpiar formulario y redirigir
+                    setFormData({ codigoProducto: '', nombreProducto: '', descripcionProducto: '', precioProducto: '', stockProducto: '', stockCriticoProducto: '', nombreCategoria: '', imagenProducto: '' });
+                    navigate('/admin/productos'); 
+                });
 
         } catch (error) {
             console.error("Error al registrar el producto:", error.response || error);
-            let errorMsg = 'Error al guardar el producto. Revise si el código o nombre ya existen o la ruta.';
-            setMensaje({ texto: errorMsg, tipo: 'error' });
+            let errorMsg = 'Error al guardar el producto. Revise si el código o nombre ya existen.';
+            window.Swal.fire('Error', errorMsg, 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -180,6 +172,7 @@ function Admin_NuevoProducto() {
                     {/* --- BOTÓN DE VOLVER --- */}
                     <div className="volver-atras-container">
                         <Link to="/admin/productos" className="volver-atras-link">
+                            {/* SVG... */}
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
@@ -190,41 +183,50 @@ function Admin_NuevoProducto() {
                     <h1 className="titulo-admin">Nuevo Producto</h1>
                     <section className="seccion-formulario">
                         <form className="formulario-usuario producto" onSubmit={handleSubmit} noValidate>
+                            
+                            {/* Mostrar mensaje de carga de categorías si es necesario */}
                             {mensaje.texto && (
                                 <p className={`alert ${mensaje.tipo === 'exito' ? 'alert-success' : 'alert-danger'}`}>
                                     {mensaje.texto}
                                 </p>
                             )}
-                            <div className="fila-formulario">
-                                <input type="text" name="codigo" placeholder="Código Producto (Mín. 3)" value={formData.codigo} onChange={handleChange} />
-                                <input type="text" name="nombre" placeholder="Nombre (Máx. 100)" value={formData.nombre} onChange={handleChange} />
-                            </div>
-                            <div className="fila-formulario">
-                                <textarea name="descripcion" placeholder="Descripción Producto (Máx. 500)" value={formData.descripcion} onChange={handleChange}></textarea>
-                            </div>
-                            <div className="fila-formulario">
-                                <input type="number" name="precio" placeholder="Precio $ (Mín. 0)" value={formData.precio} onChange={handleChange} />
-                                <input type="number" name="stock" placeholder="Stock (Entero, Mín. 0)" value={formData.stock} onChange={handleChange} />
-                                <input type="number" name="stockCritico" placeholder="Stock Crítico (Opcional)" value={formData.stockCritico} onChange={handleChange} />
-                            </div>
-                            <div className="fila-formulario">
-                                <select name="categoria" value={formData.categoria} onChange={handleChange}>
-                                    <option value="" disabled>Seleccione Categoría</option>
-                                    {categoriasBD.map(cat => (
 
-                                        <option key={cat.id} value={cat.nombre}> 
+                            {/* --- Filas de Inputs --- */}
+                            <div className="fila-formulario">
+                                {/* Usar nombres de campo corregidos */}
+                                <input type="text" name="codigoProducto" placeholder="Código Producto (Mín. 3)" value={formData.codigoProducto} onChange={handleChange} required />
+                                <input type="text" name="nombreProducto" placeholder="Nombre (Máx. 100)" value={formData.nombreProducto} onChange={handleChange} required />
+                            </div>
+                            <div className="fila-formulario">
+                                <textarea name="descripcionProducto" placeholder="Descripción Producto (Máx. 500)" value={formData.descripcionProducto} onChange={handleChange}></textarea>
+                            </div>
+                            <div className="fila-formulario">
+                                <input type="number" name="precioProducto" placeholder="Precio $ (Mín. 0)" value={formData.precioProducto} onChange={handleChange} required />
+                                <input type="number" name="stockProducto" placeholder="Stock (Entero, Mín. 0)" value={formData.stockProducto} onChange={handleChange} required />
+                                <input type="number" name="stockCriticoProducto" placeholder="Stock Crítico (Opcional)" value={formData.stockCriticoProducto} onChange={handleChange} />
+                            </div>
+                            <div className="fila-formulario">
+                                {/* Usamos nombreCategoria para el select */}
+                                <select name="nombreCategoria" value={formData.nombreCategoria} onChange={handleChange} required>
+                                    <option value="" disabled>Seleccione Categoría *</option>
+                                    {categoriasBD.map(cat => (
+                                        <option key={cat.id || cat.nombre} value={cat.nombre}> 
                                             {cat.nombre}
                                         </option>
                                     ))}
                                 </select>
                                 <input type="file" accept="image/*" name="imagenFile" className="form-control" onChange={handleImageChange} />
                             </div>
-                            {formData.imagen && (
+
+                            {/* --- Vista Previa de Imagen --- */}
+                            {formData.imagenProducto && (
                                 <div className="text-center mt-3">
                                     <p>Vista previa:</p>
-                                    <img src={formData.imagen} alt="Vista previa" style={{ maxWidth: '200px', height: 'auto', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                    <img src={formData.imagenProducto} alt="Vista previa" style={{ maxWidth: '200px', height: 'auto', borderRadius: '8px', border: '1px solid #ddd' }} />
                                 </div>
                             )}
+
+                            {/* --- Botón Guardar --- */}
                             <div className="acciones-formulario mt-4">
                                 <button type="submit" className="btn-guardar" disabled={isSubmitting}>
                                     {isSubmitting ? 'Guardando...' : 'Guardar Producto'}

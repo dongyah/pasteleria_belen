@@ -51,8 +51,12 @@ function Admin_GestionProductos() {
 
             await axios.delete(`${API_BASE_URL}/productos/delete/${idProducto}`); 
             
-
+            // Si el backend usa 'id' como clave principal:
             setProductos(productos.filter(p => p.id !== idProducto));
+            
+            // Si el backend usa 'idProducto' como clave principal:
+            // setProductos(productos.filter(p => p.idProducto !== idProducto)); 
+            
             window.alert('Producto eliminado correctamente.');
 
         } catch (err) {
@@ -63,6 +67,7 @@ function Admin_GestionProductos() {
     
 
     const formatPrice = (price) => {
+        if (price === null || price === undefined) return '$0 CLP';
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(price);
     };
 
@@ -94,7 +99,7 @@ function Admin_GestionProductos() {
                     <div className="card shadow-sm">
                         <div className="card-header d-flex justify-content-between align-items-center">
                             <h5 className="mb-0">Gestión de Productos ({productos.length} Registrados)</h5>
-                            <Link to="/admin/nuevo-producto" className="btn btn-success">Nuevo Producto</Link>
+                            <Link to="/admin/nuevo-producto" className="btn btn-primary">Nuevo Producto</Link> {/* Botón cambiado a primary para consistencia */}
                         </div>
                         <div className="card-body">
                             <div className="table-responsive">
@@ -116,36 +121,41 @@ function Admin_GestionProductos() {
                                     <tbody>
                                         {productos.length > 0 ? (
                                             productos.map(producto => (
-                                                <tr key={producto.id}> 
-                                                    <td className="text-center">{producto.id}</td>
-                                                    <td>{producto.codigo}</td>
-                                                    <td>{producto.nombre}</td>
-                                                    <td>{producto.descripcion && producto.descripcion.length > 50 ? `${producto.descripcion.substring(0, 50)}...` : producto.descripcion}</td>
-                                                    <td className="text-end">{formatPrice(producto.precio)}</td>
-                                                    <td className="text-center">{producto.stock}</td>
+                                                <tr key={producto.id || producto.idProducto}> 
+                                                    {/* Usamos producto.id para la clave principal o producto.idProducto si es tu convención */}
+                                                    <td className="text-center">{producto.id || producto.idProducto}</td> 
+                                                    
+                                                    {/* --- CORRECCIONES APLICADAS AQUÍ --- */}
+                                                    <td>{producto.codigoProducto}</td>
+                                                    <td>{producto.nombreProducto}</td>
+                                                    <td>{producto.descripcionProducto && producto.descripcionProducto.length > 50 ? `${producto.descripcionProducto.substring(0, 50)}...` : producto.descripcionProducto}</td>
+                                                    <td className="text-end">{formatPrice(producto.precioProducto)}</td>
+                                                    <td className="text-center">{producto.stockProducto}</td>
                                                     <td className="text-center">
-                                                        {producto.stockCritico && producto.stock <= producto.stockCritico && producto.stockCritico > 0 ? (
-                                                            <span className="badge bg-danger">¡CRÍTICO! ({producto.stockCritico})</span>
-                                                        ) : (
-                                                            producto.stockCritico || '-'
-                                                        )}
-                                                    </td>
-                                                    <td>{producto.categoria}</td>
+                                                        {/* Usamos stockProducto y stockCriticoProducto */}
+                                                        {producto.stockCriticoProducto && producto.stockProducto <= producto.stockCriticoProducto && producto.stockCriticoProducto > 0 ? (
+                                                             <span className="badge bg-danger">¡CRÍTICO! ({producto.stockCriticoProducto})</span>
+                                                         ) : (
+                                                             producto.stockCriticoProducto || '-'
+                                                         )}
+                                                     </td>
+                                                    <td>{producto.nombreCategoria}</td> {/* Asumimos que el backend devuelve el nombre de la categoría */}
                                                     <td className="text-center">
-                                                        {producto.imagen ? 
-                                                            <img src={producto.imagen} alt={producto.nombre} style={{ height: '30px', width: 'auto', objectFit: 'cover' }} />
-                                                            : 'N/A'
-                                                        }
-                                                    </td>
+                                                         {producto.imagenProducto ? 
+                                                             <img src={producto.imagenProducto} alt={producto.nombreProducto} style={{ height: '30px', width: 'auto', objectFit: 'cover' }} />
+                                                             : 'N/A'
+                                                         }
+                                                     </td>
+                                                    
                                                     <td className="text-center">
-                                                        <Link to={`/admin/editar-producto/${producto.id}`} className="btn btn-sm btn-primary me-2">Editar</Link>
-                                                        <button 
-                                                            className="btn btn-sm btn-danger"
-                                                            onClick={() => handleDelete(producto.id)} 
-                                                        >
-                                                            Eliminar
-                                                        </button>
-                                                    </td>
+                                                         <Link to={`/admin/editar-producto/${producto.id || producto.idProducto}`} className="btn btn-sm btn-primary me-2">Editar</Link>
+                                                         <button 
+                                                             className="btn btn-sm btn-danger"
+                                                             onClick={() => handleDelete(producto.id || producto.idProducto)} 
+                                                         >
+                                                             Eliminar
+                                                         </button>
+                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (

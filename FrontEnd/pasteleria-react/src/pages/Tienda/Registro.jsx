@@ -4,37 +4,44 @@ import axios from 'axios';
 import "../../styles/all.css";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
+import Swal from 'sweetalert2'; 
 
 // URL base del backend
-const API_BASE_URL = "http://localhost:8015/api/v1"; 
+const API_BASE_URL = "http://localhost:8015/api/v1"; // Ajusté la barra final si no la quieres doble
+
+// --- IMPORTANTE: Obtener las comunasPorRegion del archivo JS global ---
+const comunasPorRegion = window.comunasPorRegion || { /* ... mock data si es necesario ... */ };
+
 
 function Registro() {
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
+    // --- ESTADOS (Claves consistentes con el backend) ---
     const [formData, setFormData] = useState({
-        nombre: "",
-        apellidos: "",
-        fechaNac: "", 
-        rut: "",
-        correo: "",
-        telefono: "", 
-        region: "", 
-        comuna: "", 
-        direccion: "", 
-        password: "",
-        confirmar: "",
-        codigoDescuento: "",
+        nombreUsuario: "",
+        apellidosUsuario: "",
+        fechaNacUsuario: "", 
+        rutUsuario: "",
+        correoUsuario: "",
+        telefonoUsuario: "", 
+        regionUsuario: "", 
+        comunaUsuario: "", 
+        direccionUsuario: "", 
+        passwordUsuario: "",
+        confirmarUsuario: "",
+        codigoDescuentoUsuario: "",
     });
 
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [comunasDisponibles, setComunasDisponibles] = useState([]);
+    
+    // Asumo que tienes una función global para validar campos vacíos
+    const validarCampoVacio = window.validarCampoVacio || ((t) => t && t.trim() !== '');
 
-
-    // --- EFECTO 1: Carga de Scripts (Admin.js, SweetAlert2) ---
+    // --- EFECTO 1: Carga de Scripts (Se mantiene) ---
     useEffect(() => {
         const loadScripts = () => {
-            // 1. Carga SweetAlert2
+            // ... (Lógica de carga de scripts) ...
             if (!window.Swal) {
                 const swalScript = document.createElement("script");
                 swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
@@ -42,16 +49,14 @@ function Registro() {
                 document.body.appendChild(swalScript);
             }
 
-            // 2. Carga Admin.js (asume que contiene window.validarRut, window.comunasPorRegion, etc.)
             let scriptTag = document.querySelector("script[src='/js/Admin.js']");
             if (!scriptTag) {
-                 scriptTag = document.createElement("script");
-                 scriptTag.src = "/js/Admin.js"; 
-                 scriptTag.async = true;
-                 document.body.appendChild(scriptTag);
+                scriptTag = document.createElement("script");
+                scriptTag.src = "/js/Admin.js"; 
+                scriptTag.async = true;
+                document.body.appendChild(scriptTag);
             }
             
-            // 3. Verifica que ambos estén listos
             const checkReady = setInterval(() => {
                 if (window.Swal && window.validarRut && window.comunasPorRegion) { 
                     setIsScriptLoaded(true);
@@ -62,22 +67,28 @@ function Registro() {
         loadScripts();
     }, []);
 
-    // --- EFECTO 2: Lógica de Comunas y Regiones ---
+    // --- EFECTO 2: Lógica de Comunas y Regiones (OPTIMIZADO) ---
     useEffect(() => {
-        if (isScriptLoaded && formData.region && window.comunasPorRegion) {
-            setComunasDisponibles(window.comunasPorRegion[formData.region] || []);
+        const regionKey = formData.regionUsuario; 
+
+        if (isScriptLoaded && regionKey && comunasPorRegion) {
+            const nuevasComunas = comunasPorRegion[regionKey] || [];
+            setComunasDisponibles(nuevasComunas);
+            
+            // Lógica de reseteo fuera del setFormData principal para evitar bucles si la comuna no existe
+            if (!nuevasComunas.includes(formData.comunaUsuario)) {
+                 setFormData(prev => ({ ...prev, comunaUsuario: '' }));
+            }
         } else {
             setComunasDisponibles([]);
         }
-        if (comunasDisponibles.length > 0 && !comunasDisponibles.includes(formData.comuna)) {
-             setFormData(prev => ({ ...prev, comuna: '' }));
-        }
-    }, [formData.region, isScriptLoaded]);
-    
+    }, [formData.regionUsuario, isScriptLoaded]); 
 
-    // --- MANEJADOR DE CAMBIOS GENERAL ---
+
+    // --- MANEJADOR DE CAMBIOS GENERAL (CORREGIDO) ---
     const handleChange = (e) => {
         const { name, value } = e.target;
+        // El 'name' del input DEBE coincidir con la clave del estado
         setFormData(prev => ({
             ...prev,
             [name]: value,
@@ -85,80 +96,57 @@ function Registro() {
     };
 
 
-    // --- MANEJADOR DE ENVÍO Y VALIDACIÓN ---
+    // --- MANEJADOR DE ENVÍO Y VALIDACIÓN (Se mantiene) ---
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!isScriptLoaded || !window.Swal) {
-            window.alert("Error: Las herramientas de validación no están listas."); // Usar alert como fallback
-            return;
-        }
-
-        // --- VALIDACIONES DETALLADAS CON SWEETALERT2 ---
+        // ... (Tu lógica de validación aquí) ...
+        if (!isScriptLoaded || !window.Swal) { window.alert("Error: Las herramientas de validación no están listas."); return; }
+        const validarRut = window.validarRut;
+        const validarCorreo = window.validarCorreo;
+        const validarPassword = window.validarPassword;
+        const validarTelefono = window.validarTelefono;
         
-        const fireValidationError = (text) => {
-            window.Swal.fire('Error de Registro', text, 'error');
-        };
+        const fireValidationError = (text) => { window.Swal.fire('Error de Registro', text, 'error'); };
 
-        if (formData.password !== formData.confirmar) {
-            fireValidationError("Las contraseñas no coinciden.");
-            return;
-        }
-        if (!window.validarPassword(formData.password)) { 
-            fireValidationError("La contraseña debe tener entre 4 y 10 caracteres.");
-            return;
-        }
-        if (!window.validarRut(formData.rut)) { 
-            fireValidationError("El RUT ingresado no es válido.");
-            return;
-        }
-        if (!window.validarCorreo(formData.correo)) {
-            fireValidationError("El correo debe ser @duocuc.cl, @profesor.duoc.cl o @gmail.com.");
-            return;
-        }
-        if (!window.validarCampoVacio(formData.nombre) || !window.validarCampoVacio(formData.apellidos)) {
-             fireValidationError("Nombre y Apellidos son obligatorios."); return;
-        }
-        if (!formData.region || !formData.comuna) { 
-            fireValidationError("Debe seleccionar una región y comuna."); return;
-        }
-        if (!window.validarCampoVacio(formData.direccion)) {
-             fireValidationError("La dirección es obligatoria."); return;
-        }
-        if (formData.telefono && !window.validarTelefono(formData.telefono)) {
-             fireValidationError("El teléfono es inválido. Debe ser 9xxxxxxxx."); return;
-        }
+        if (formData.passwordUsuario !== formData.confirmarUsuario) { fireValidationError("Las contraseñas no coinciden."); return; }
+        if (!validarPassword(formData.passwordUsuario)) { fireValidationError("La contraseña debe tener entre 4 y 10 caracteres."); return; }
+        if (!validarRut(formData.rutUsuario)) { fireValidationError("El RUT ingresado no es válido."); return; }
+        if (!validarCorreo(formData.correoUsuario)) { fireValidationError("El correo debe ser @duocuc.cl, @profesor.duoc.cl o @gmail.com."); return; }
+        if (!validarCampoVacio(formData.nombreUsuario) || !validarCampoVacio(formData.apellidosUsuario)) { fireValidationError("Nombre y Apellidos son obligatorios."); return; }
+        if (!formData.regionUsuario || !formData.comunaUsuario) { fireValidationError("Debe seleccionar una región y comuna."); return; }
+        if (!validarCampoVacio(formData.direccionUsuario)) { fireValidationError("La dirección es obligatoria."); return; }
+        if (formData.telefonoUsuario && !validarTelefono(formData.telefonoUsuario)) { fireValidationError("El teléfono es inválido. Debe ser 9xxxxxxxx."); return; }
 
-        // --- PREPARAR PAYLOAD FINAL PARA EL BACKEND ---
-        const nuevoUsuarioPayload = {
-            nombre: formData.nombre.trim(),
-            apellidos: formData.apellidos.trim(),
-            fechaNac: formData.fechaNac || null,
-            rut: formData.rut.replace(/\./g, '').replace('-', '').trim().toUpperCase(), 
-            correo: formData.correo.trim(),
-            telefono: formData.telefono || null,
-            region: formData.region,
-            comuna: formData.comuna,
-            direccion: formData.direccion,
-            password: formData.password,
-            codigoDescuento: formData.codigoDescuento || null,
-            tipoUsuario: 'Cliente', // ROL FIJO PARA REGISTRO DE TIENDA
-        };
+
+// --- NUEVO PAYLOAD (AJUSTADO A CLAVES LARGAS DE ENTIDAD) ---
+    const nuevoUsuarioPayload = {
+        // Si la entidad es nombreUsuario, enviamos:
+        nombreUsuario: formData.nombreUsuario.trim(),
+        apellidosUsuario: formData.apellidosUsuario.trim(),
+        fechaNacUsuario: formData.fechaNacUsuario || null,
+        rutUsuario: formData.rutUsuario.replace(/\./g, '').replace('-', '').trim().toUpperCase(), 
+        correoUsuario: formData.correoUsuario.trim(),
+        telefonoUsuario: formData.telefonoUsuario || null,
+        regionUsuario: formData.regionUsuario,
+        comunaUsuario: formData.comunaUsuario,
+        direccionUsuario: formData.direccionUsuario,
+        passwordUsuario: formData.passwordUsuario,
+        codigoDescuentoUsuario: formData.codigoDescuentoUsuario || null,
+        tipoUsuarioUsuario: 'cliente', // Corregido el nombre de la propiedad según la entidad
+    };
 
         try {
             // Llamada POST a tu endpoint de creación de usuarios
             const response = await axios.post(`${API_BASE_URL}/usuarios/save`, nuevoUsuarioPayload);
             const usuarioCreado = response.data;
 
-            window.Swal.fire('¡Registro Exitoso!', `Bienvenid@ ${usuarioCreado.nombre}. Ya puedes iniciar sesión.`, 'success')
-                .then(() => {
-                    navigate("/login"); 
-                });
+            window.Swal.fire('¡Registro Exitoso!', `Bienvenid@ ${usuarioCreado.nombreUsuario}. Ya puedes iniciar sesión.`, 'success')
+                .then(() => { navigate("/login"); });
 
         } catch (error) {
             console.error("Error en el registro:", error.response || error);
             let errorMsg = "Error al registrar. Verifica si el correo o RUT ya existen.";
-            
             if (error.response && error.response.data && error.response.data.message) {
                  errorMsg = error.response.data.message;
             }
@@ -178,45 +166,48 @@ function Registro() {
 
                     <form className="form-registro" autoComplete="off" onSubmit={handleSubmit}>
                         
+                        {/* 🔑 CLAVE: CORRECCIÓN EN EL ATRIBUTO NAME */}
+                        
                         <div className="fila-formulario">
-                            <input type="text" name="nombre" placeholder="Nombre" value={formData.nombre} onChange={handleChange} required />
-                            <input type="text" name="apellidos" placeholder="Apellidos" value={formData.apellidos} onChange={handleChange} required />
+                            <input type="text" name="nombreUsuario" placeholder="Nombre" value={formData.nombreUsuario} onChange={handleChange} required />
+                            <input type="text" name="apellidosUsuario" placeholder="Apellidos" value={formData.apellidosUsuario} onChange={handleChange} required />
                         </div>
                         
                         <div className="fila-formulario">
-                            <input type="date" name="fechaNac" placeholder="dd-mm-aaaa" value={formData.fechaNac} onChange={handleChange} />
-                            <input type="text" name="rut" placeholder="RUT (sin puntos, con guión)" value={formData.rut} onChange={handleChange} required />
+                            <input type="date" name="fechaNacUsuario" placeholder="dd-mm-aaaa" value={formData.fechaNacUsuario} onChange={handleChange} />
+                            <input type="text" name="rutUsuario" placeholder="RUT (sin puntos, con guión)" value={formData.rutUsuario} onChange={handleChange} required />
                         </div>
                         
                         <div className="fila-formulario">
-                            <input type="email" name="correo" placeholder="Correo electrónico" value={formData.correo} onChange={handleChange} required />
-                            <input type="tel" name="telefono" placeholder="Teléfono (ej: 912345678)" value={formData.telefono} onChange={handleChange} />
+                            <input type="email" name="correoUsuario" placeholder="Correo electrónico" value={formData.correoUsuario} onChange={handleChange} required />
+                            <input type="tel" name="telefonoUsuario" placeholder="Teléfono (ej: 912345678)" value={formData.telefonoUsuario} onChange={handleChange} />
                         </div>
                         
                         <div className="fila-formulario">
-                             <select name="region" value={formData.region} onChange={handleChange} disabled={!isScriptLoaded} required>
-                                <option value="" disabled>Seleccione Región</option>
-                                {isScriptLoaded && window.comunasPorRegion && Object.keys(window.comunasPorRegion).map(regionKey => (
-                                    <option key={regionKey} value={regionKey}>{regionKey.charAt(0).toUpperCase() + regionKey.slice(1).replace('_', ' ')}</option>
-                                ))}
+                             <select name="regionUsuario" value={formData.regionUsuario} onChange={handleChange} disabled={!isScriptLoaded} required>
+                                 <option value="" disabled>Seleccione Región</option>
+                                 {isScriptLoaded && Object.keys(comunasPorRegion).map(regionKey => (
+                                     <option key={regionKey} value={regionKey}>{regionKey.charAt(0).toUpperCase() + regionKey.slice(1).replace('_', ' ')}</option>
+                                 ))}
                             </select>
-                            <select name="comuna" value={formData.comuna} onChange={handleChange} disabled={!formData.region} required>
-                                <option value="" disabled>Seleccione Comuna</option>
-                                {comunasDisponibles.map(com => ( <option key={com} value={com}>{com}</option> ))}
+                            {/* CLAVE: ComunasDisponibles ya está calculado en el useEffect */}
+                            <select name="comunaUsuario" value={formData.comunaUsuario} onChange={handleChange} disabled={!formData.regionUsuario || comunasDisponibles.length === 0} required>
+                                 <option value="" disabled>Seleccione Comuna</option>
+                                 {comunasDisponibles.map(com => ( <option key={com} value={com}>{com}</option> ))}
                             </select>
                         </div>
 
                         <div className="fila-formulario">
-                            <input type="text" name="direccion" placeholder="Dirección completa" value={formData.direccion} onChange={handleChange} required />
+                            <input type="text" name="direccionUsuario" placeholder="Dirección completa" value={formData.direccionUsuario} onChange={handleChange} required />
                         </div>
                         
                         <div className="fila-formulario">
-                            <input type="password" name="password" placeholder="Contraseña" value={formData.password} onChange={handleChange} required />
-                            <input type="password" name="confirmar" placeholder="Confirmar Contraseña" value={formData.confirmar} onChange={handleChange} required />
+                            <input type="password" name="passwordUsuario" placeholder="Contraseña" value={formData.passwordUsuario} onChange={handleChange} required />
+                            <input type="password" name="confirmarUsuario" placeholder="Confirmar Contraseña" value={formData.confirmarUsuario} onChange={handleChange} required />
                         </div>
 
                         <div className="fila-formulario" style={{justifyContent: 'center'}}>
-                            <input type="text" name="codigoDescuento" placeholder="Código de descuento (opcional)" value={formData.codigoDescuento} onChange={handleChange} style={{width: '70%'}}/>
+                            <input type="text" name="codigoDescuentoUsuario" placeholder="Código de descuento (opcional)" value={formData.codigoDescuentoUsuario} onChange={handleChange} style={{width: '70%'}}/>
                         </div>
 
                         <button type="submit">Registrarse</button>
