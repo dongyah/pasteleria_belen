@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral'; 
 import axios from 'axios';
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_Gestion.css';
-
+import Swal from 'sweetalert2'; 
 
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Admin_GestionUsuarios() {
-    
+    const navigate = useNavigate();
     const [usuarios, setUsuarios] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false); 
 
+    // --- EFECTO: Carga de SweetAlert2 ---
     useEffect(() => {
         if (!window.Swal) {
             const swalScript = document.createElement("script");
@@ -27,22 +28,41 @@ function Admin_GestionUsuarios() {
         }
     }, []); 
 
-    // Función para cargar los usuarios desde el Backend
+    // --- FUNCIÓN CRÍTICA: CARGA Y AUTORIZACIÓN JWT ---
     const fetchUsuarios = async () => {
         setCargando(true);
         setError(null);
+        
+        // 🔑 PASO 1: OBTENER EL TOKEN JWT
+        const token = localStorage.getItem('jwtToken');
+
+        if (!token) {
+            // Si no hay token, redirigir y terminar
+            setError("Error: Token de sesión no encontrado. Reintente el login.");
+            setCargando(false);
+            navigate('/login');
+            return;
+        }
+
         try {
-            // GET al endpoint: http://localhost:8015/api/v1/usuarios/all
-            const response = await axios.get(`${API_BASE_URL}/usuarios/all`);
+            // 🔑 PASO 2: INCLUIR EL TOKEN EN LOS HEADERS
+            // Esto es crucial para que Spring Security conceda el acceso (403/CORS)
+            const response = await axios.get(`${API_BASE_URL}/usuarios/all`, {
+                headers: {
+                    'Authorization': `Bearer ${token}` 
+                }
+            });
             setUsuarios(response.data);
+            
         } catch (err) {
             console.error("Error al cargar usuarios:", err.response || err);
             
             let errorMsg = "Error al conectar con el servidor o cargar usuarios. Revise CORS y la ruta.";
-            if (err.response && err.response.status === 404) {
-                 errorMsg = "Error 404: La ruta /api/usuarios/all no fue encontrada en Spring Boot.";
-            } else if (err.response && err.response.status === 403) {
-                 errorMsg = "Error 403: Acceso denegado (Problema de autenticación).";
+            
+            if (err.response && (err.response.status === 403 || err.response.status === 401)) {
+                 errorMsg = "Error 403: Acceso denegado. El token es inválido o el usuario no tiene rol ADMIN.";
+            } else if (err.response && err.response.status === 404) {
+                 errorMsg = "Error 404: La ruta de la API no fue encontrada.";
             }
             
             if (isScriptLoaded && window.Swal) {
@@ -55,6 +75,7 @@ function Admin_GestionUsuarios() {
         }
     };
     
+    // Ejecutar la carga de usuarios solo cuando Swal está listo (y la app está montada)
     useEffect(() => {
         if (isScriptLoaded) {
             fetchUsuarios(); 
@@ -66,6 +87,12 @@ function Admin_GestionUsuarios() {
         if (!isScriptLoaded || !window.Swal) {
             console.error('SweetAlert2 no está cargado.');
             window.alert('Error al intentar eliminar: Herramienta de confirmación no disponible.');
+            return;
+        }
+        
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            window.Swal.fire('Error', 'Debe iniciar sesión para realizar esta acción.', 'error');
             return;
         }
 
@@ -83,22 +110,26 @@ function Admin_GestionUsuarios() {
 
         if (result.isConfirmed) {
             try {
-                // Llamada DELETE al Backend
-                await axios.delete(`${API_BASE_URL}/usuarios/delete/${idUsuario}`); 
+                // Llamada DELETE con el TOKEN
+                await axios.delete(`${API_BASE_URL}/usuarios/delete/${idUsuario}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}` 
+                    }
+                }); 
                 
                 // Actualización de estado y mensaje de éxito
                 setUsuarios(usuarios.filter(u => (u.id || u.idUsuario) !== idUsuario));
                 window.Swal.fire('¡Eliminado!', 'El usuario ha sido eliminado correctamente.', 'success');
 
             } catch (err) {
-                // Manejo de errores con SweetAlert2
                 console.error("Error al eliminar:", err.response || err);
-                let errorMsg = 'Error al intentar eliminar el usuario. Es posible que tenga dependencias o el ID no exista.';
+                let errorMsg = 'Error al intentar eliminar el usuario. Verifique permisos o dependencias.';
                 window.Swal.fire('Error', errorMsg, 'error');
             }
         }
     };
     
+    // Helper para obtener el ID de la entidad
     const getUsuarioId = (usuario) => usuario.id || usuario.idUsuario;
 
     if (cargando) {
@@ -154,7 +185,6 @@ function Admin_GestionUsuarios() {
                                             usuarios.map(usuario => (
                                                 <tr key={getUsuarioId(usuario)}> 
                                                     <td className="text-center">{getUsuarioId(usuario)}</td>
-                                                    {/* --- CORRECCIONES APLICADAS AQUÍ --- */}
                                                     <td>{usuario.nombreUsuario}</td>
                                                     <td>{usuario.apellidosUsuario}</td>
                                                     <td>{usuario.fechaNacUsuario ? new Date(usuario.fechaNacUsuario).toLocaleDateString('es-CL') : 'N/A'}</td> 
@@ -167,8 +197,7 @@ function Admin_GestionUsuarios() {
                                                     <td className="text-center">{usuario.tipoUsuarioUsuario}</td> 
                                                     <td className="text-center acciones-columna">
                                                         <Link to={`/admin/editar-usuario/${getUsuarioId(usuario)}`} className="btn btn-sm btn-primary me-2">Editar</Link>
-                                                        <Link to={`/admin/historial-compras/${getUsuarioId(usuario)}`} className="btn btn-sm btn-info me-2">Historial</Link>
-                                                        
+                                                        <Link to={`/admin/usuarios/historial/${getUsuarioId(usuario)}`} className="btn btn-sm btn-info me-2">Historial</Link>
                                                         <button 
                                                             className="btn btn-sm btn-danger"
                                                             onClick={() => handleDelete(getUsuarioId(usuario))} 

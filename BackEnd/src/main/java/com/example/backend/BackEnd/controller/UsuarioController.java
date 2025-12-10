@@ -1,21 +1,24 @@
 package com.example.backend.BackEnd.controller;
 
 import com.example.backend.BackEnd.auth.AuthenticationRequest;
+import com.example.backend.BackEnd.auth.AuthenticationResponse; 
+import com.example.backend.BackEnd.auth.RegisterRequest; 
 import com.example.backend.BackEnd.model.Orden;
 import com.example.backend.BackEnd.model.Usuario;
 import com.example.backend.BackEnd.repository.UsuarioRepository;
 import com.example.backend.BackEnd.service.UsuarioService;
 import com.example.backend.BackEnd.repository.OrdenRepository;
-
+import com.example.backend.BackEnd.auth.AuthenticationService; 
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-
+import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.security.access.prepost.PreAuthorize;
 
 
 @RestController
@@ -23,93 +26,100 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UsuarioController {
     
-    @Autowired
-    private OrdenRepository ordenRepository;
+    
+    @Autowired private OrdenRepository ordenRepository;
+    @Autowired private UsuarioService usuarioService; 
+    @Autowired private UsuarioRepository usuarioRepository; 
+    @Autowired private AuthenticationService authenticationService; 
 
-    @Autowired
-    private UsuarioService UsuarioService;
+
+    // --- 1. REGISTRO DE USUARIO (ACCESO PÚBLICO) ---
+    @PostMapping("/save")
+    public ResponseEntity<AuthenticationResponse> postUsuario(@RequestBody RegisterRequest request) { 
+        AuthenticationResponse response = authenticationService.register(request);
+        return ResponseEntity.ok(response);
+    }
+    
+    
+    // --- 2. LOGIN / AUTENTICACIÓN (ACCESO PÚBLICO) ---
+    @PostMapping("/login") 
+    public ResponseEntity<?> login(@RequestBody AuthenticationRequest authenticationRequest) {
+        try {
+            AuthenticationResponse response = authenticationService.authenticate(authenticationRequest);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas.");
+        }
+    }
+
+
+    // --- 3. MÉTODOS CRUD ESTÁNDAR (SÓLO ADMIN) ---
+    @PreAuthorize("hasRole('ADMIN')") 
     @GetMapping("/all")
     public List<Usuario> getAllUsuario() {
-        return UsuarioService.getAllUsuarios();
-    }
-    @PostMapping("/save")
-    public Usuario postUsuario(@RequestBody Usuario entity) {        
-        return UsuarioService.saveUsuario(entity);
-    }
-    @GetMapping("/find/{id}")
-    public Optional<Usuario> getUsuarioId(@PathVariable Long idUsuario) {
-        return UsuarioService.findByIdUsuario(idUsuario);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public void deleteUsuario(@PathVariable Long idUsuario){
-        UsuarioService.deleteUsuario(idUsuario);
+        return usuarioService.getAllUsuarios();
     }
     
-    @Autowired
-    private UsuarioRepository UsuarioRepository;
-    @PutMapping("/update/{idUsuario}")
-    public Optional<Object> 
-        putUsuario(@PathVariable Long idUsuario, @RequestBody Usuario entity) {
-        
-        return UsuarioRepository.findById(idUsuario)
-        .map(existeUsuario->{
-            existeUsuario.setNombreUsuario(entity.getNombreUsuario());
-            existeUsuario.setApellidosUsuario(entity.getApellidosUsuario());
-            existeUsuario.setFechaNacUsuario(entity.getFechaNacUsuario());
-            existeUsuario.setRutUsuario(entity.getRutUsuario());
-            existeUsuario.setCorreoUsuario(entity.getCorreoUsuario());
-            existeUsuario.setTelefonoUsuario(entity.getTelefonoUsuario());
-            existeUsuario.setRegionUsuario(entity.getRegionUsuario());
-            existeUsuario.setComunaUsuario(entity.getComunaUsuario());
-            existeUsuario.setDireccionUsuario(entity.getDireccionUsuario());
-            existeUsuario.setPasswordUsuario(entity.getPasswordUsuario());
-            existeUsuario.setTipoUsuarioUsuario(entity.getTipoUsuarioUsuario());
-            existeUsuario.setCodigoDescuentoUsuario(entity.getCodigoDescuentoUsuario());
-
-            Usuario UsuarioUpdate = UsuarioRepository.save(existeUsuario);
-            return UsuarioUpdate;
-        });
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')") 
+    @GetMapping("/find/{idUsuario}") 
+    public Optional<Usuario> getUsuarioId(@PathVariable Long idUsuario) {
+        return usuarioService.findByIdUsuario(idUsuario);
     }
 
-    @PostMapping("/login")
-        public ResponseEntity<?> login(@RequestBody AuthenticationRequest authenticationRequest) {
-            
-            // 1. Buscar usuario por correo (asumo que tienes este método en tu Repositorio)
-            Optional<Usuario> usuarioOpt = UsuarioRepository.findByCorreoUsuario(authenticationRequest.getCorreo());
+    @PreAuthorize("hasRole('ADMIN')") 
+    @DeleteMapping("/delete/{idUsuario}") 
+    public void deleteUsuario(@PathVariable Long idUsuario){
+        usuarioService.deleteUsuario(idUsuario);
+    }
+    
+    // --- 4. ACTUALIZACIÓN (PUT) (ADMIN y VENDEDOR) ---
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')") 
+    @PutMapping("/update/{idUsuario}")
+    @Transactional 
+    public ResponseEntity<Usuario> putUsuario(@PathVariable Long idUsuario, @RequestBody Usuario entity) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
 
-            if (usuarioOpt.isEmpty()) {
-                // Usuario no encontrado (401 Unauthorized o 404 Not Found)
-                return ResponseEntity.status(401).body("Credenciales inválidas.");
-            }
-
-            Usuario usuario = usuarioOpt.get();
-            
-            // 2. Verificar la contraseña
-            // SI USAS BCRYPT: if (passwordEncoder.matches(authenticationRequest.getPassword(), usuario.getPassword())) {
-            // SI NO USAS BCRYPT (solo para desarrollo/pruebas):
-            if (authenticationRequest.getPassword().equals(usuario.getPasswordUsuario())) {
-                
-                // Éxito: Devolvemos la información del usuario (incluyendo el rol)
-                // El frontend usará esta información para guardar la sesión.
-                return ResponseEntity.ok(usuario);
-            } else {
-                // Contraseña incorrecta
-                return ResponseEntity.status(401).body("Credenciales inválidas.");
-            }
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.notFound().build(); 
+        }
+        
+        Usuario existeUsuario = usuarioOpt.get();
+        
+        existeUsuario.setNombreUsuario(entity.getNombreUsuario());
+        existeUsuario.setApellidosUsuario(entity.getApellidosUsuario());
+        existeUsuario.setFechaNacUsuario(entity.getFechaNacUsuario());
+        existeUsuario.setRutUsuario(entity.getRutUsuario());
+        existeUsuario.setCorreoUsuario(entity.getCorreoUsuario());
+        existeUsuario.setTelefonoUsuario(entity.getTelefonoUsuario());
+        existeUsuario.setRegionUsuario(entity.getRegionUsuario());
+        existeUsuario.setComunaUsuario(entity.getComunaUsuario());
+        existeUsuario.setDireccionUsuario(entity.getDireccionUsuario());
+        
+        if (entity.getPasswordUsuario() != null && !entity.getPasswordUsuario().isEmpty()) {
+             existeUsuario.setPasswordUsuario(entity.getPasswordUsuario());
+        } else {
+             existeUsuario.setPasswordUsuario(existeUsuario.getPasswordUsuario()); 
         }
 
+        existeUsuario.setTipoUsuarioUsuario(entity.getTipoUsuarioUsuario());
+        existeUsuario.setCodigoDescuentoUsuario(entity.getCodigoDescuentoUsuario());
+
+        try {
+            Usuario usuarioUpdate = usuarioRepository.save(existeUsuario);
+            return ResponseEntity.ok(usuarioUpdate); 
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build(); 
+        }
+    }
+
+
+    // --- 5. HISTORIAL DE COMPRAS (Ruta Protegida - VENDEDOR y ADMIN) ---
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
     @GetMapping("/{idUsuario}/historial")
-        public ResponseEntity<List<Orden>> getHistorialCompras(@PathVariable Long idUsuario) {
-            
-            // Busca el historial de compras del usuario
-            List<Orden> historial = ordenRepository.findByIdUsuarioOrderByFechaCompraDesc(idUsuario);
-            
-            return ResponseEntity.ok(historial);
-        }    
-       
-    
-    
+    public ResponseEntity<List<Orden>> getHistorialCompras(@PathVariable Long idUsuario) {
+        
+        List<Orden> historial = ordenRepository.findByUsuarioIdOrderByFechaCompraDesc(idUsuario); 
+        
+        return ResponseEntity.ok(historial);
+    } 
 }
-
-

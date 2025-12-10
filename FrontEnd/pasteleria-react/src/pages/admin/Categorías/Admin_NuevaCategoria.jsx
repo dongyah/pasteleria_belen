@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Admin_BarraLateral from '../Admin_BarraLateral'; // Asumo que este componente existe
+import Admin_BarraLateral from '../Admin_BarraLateral'; 
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está cargado
+import Swal from 'sweetalert2'; 
 
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
@@ -14,10 +14,10 @@ function Admin_NuevaCategoria() {
 
     const navigate = useNavigate();
 
-    // --- ESTADO CORREGIDO: Usamos la convención 'nombreCategoria' para el estado ---
+    // --- ESTADO ---
     const [nombreCategoria, setNombreCategoria] = useState(''); 
-
-
+    
+    // --- ESTADOS DE CONTROL ---
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false); 
@@ -51,7 +51,6 @@ function Admin_NuevaCategoria() {
              return;
         }
 
-        // Validación de campo usando el estado corregido
         if (!nombreCategoria.trim()) {
             window.Swal.fire('Error de Validación', 'El nombre de la categoría es obligatorio.', 'error');
             return;
@@ -59,20 +58,33 @@ function Admin_NuevaCategoria() {
 
         setIsSubmitting(true);
         
+        // 🔑 FIX CRÍTICO 1: Obtener el token de localStorage
+        const token = localStorage.getItem('jwtToken'); 
+        
+        if (!token) {
+            window.Swal.fire('Error', 'Debe iniciar sesión para crear categorías.', 'error');
+            setIsSubmitting(false);
+            return;
+        }
+        
         try {
-            // --- PAYLOAD AJUSTADO ---
+            // --- PAYLOAD AJUSTADO (Coincide con Categoria.java) ---
             const categoriaPayload = {
-                nombreCategoria: nombreCategoria, // CLAVE: Enviamos el nombre con el sufijo
+                nombreCategoria: nombreCategoria, 
             };
             
-            // Llamada POST al Backend
-            const response = await axios.post(`${API_BASE_URL}/categorias/save`, categoriaPayload);
+            // 🔑 FIX CRÍTICO 2: Enviar el token en el encabezado para evitar el 403 Forbidden
+            const response = await axios.post(`${API_BASE_URL}/categorias/save`, categoriaPayload, {
+                headers: {
+                    'Authorization': `Bearer ${token}` 
+                }
+            });
 
             const categoriaCreada = response.data;
             
             window.Swal.fire(
                 '¡Categoría Creada!', 
-                `La categoría "${categoriaCreada.nombreCategoria}" (ID: ${categoriaCreada.id || 'N/A'}) fue guardada.`, 
+                `La categoría "${categoriaCreada.nombreCategoria}" (ID: ${categoriaCreada.idCategoria || 'N/A'}) fue guardada.`, 
                 'success'
             );
             
@@ -83,6 +95,13 @@ function Admin_NuevaCategoria() {
 
             console.error("Error al guardar categoría:", error.response || error);
             let errorMsg = 'Error al guardar la categoría. Revise si el nombre ya existe o la ruta POST.';
+            
+            if (error.response && error.response.status === 403) {
+                 errorMsg = 'Acceso denegado (403). Su usuario no tiene el rol ADMIN/VENDEDOR.';
+            } else if (error.response && error.response.status === 409) {
+                 errorMsg = 'El nombre de la categoría ya existe.';
+            }
+            
             window.Swal.fire('Error', errorMsg, 'error');
         } finally {
             setIsSubmitting(false);
@@ -117,10 +136,10 @@ function Admin_NuevaCategoria() {
                             <div className="fila-formulario" style={{maxWidth: '400px', margin: '0 auto'}}>
                                 <input 
                                     type="text" 
-                                    name="nombreCategoria" // CLAVE: Nombre del input para coincidir con el estado
+                                    name="nombreCategoria" 
                                     placeholder="Nombre de la Categoría" 
                                     value={nombreCategoria} 
-                                    onChange={(e) => setNombreCategoria(e.target.value)} // Actualiza el estado corregido
+                                    onChange={(e) => setNombreCategoria(e.target.value)} 
                                     style={{width: '100%'}}
                                     required
                                 />

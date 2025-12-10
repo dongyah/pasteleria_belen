@@ -1,28 +1,22 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import "../../styles/all.css"; 
+import "../../styles/Tienda.css"; 
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
 
 function Home() {
-    // Datos simulados de productos destacados, elegidos del catálogo completo
+    // Datos simulados de productos destacados.
+    // El campo 'nombre' debe coincidir con la clave del objeto en tu mockup de productos.
     const productosDestacados = [
-        // 1. Torta Cuadrada
-        { nombre: "Torta Cuadrada de Chocolate", precio: 45000, img: "/img/Torta de chocolate.png", id: 1 },
-        // 2. Postre Individual
-        { nombre: "Tiramisú Clásico", precio: 5500, img: "/img/Tiramisú Clásico.png", id: 6 },
-        // 3. Opción Sin Azúcar
-        { nombre: "Cheesecake Sin Azúcar", precio: 47000, img: "/img/Cheesecake Sin Azúcar.png", id: 8 },
-        // 4. Torta Especial
-        { nombre: "Torta Especial de Cumpleaños", precio: 55000, img: "/img/Torta Especial de cumpleaños.png", id: 15 },
-        // 5. Opción Vegana
-        { nombre: "Torta Vegana de Chocolate", precio: 50000, img: "/img/Torta Vegana de Chocolate.png", id: 13 },
-        // 6. Producto Tradicional
-        { nombre: "Tarta de Santiago", precio: 6000, img: "/img/Tarta de Santiago.png", id: 10 },
+        { nombre: "Torta Cuadrada de Chocolate", precio: 45000, img: "/img/Torta de chocolate.png" },
+        { nombre: "Tiramisú Clásico", precio: 5500, img: "/img/Tiramisú Clásico.png" },
+        { nombre: "Cheesecake Sin Azúcar", precio: 47000, img: "/img/Cheesecake Sin Azúcar.png" },
+        { nombre: "Torta Especial de Cumpleaños", precio: 55000, img: "/img/Torta Especial de cumpleaños.png" },
+        { nombre: "Torta Vegana de Chocolate", precio: 50000, img: "/img/Torta Vegana de Chocolate.png" },
+        { nombre: "Tarta de Santiago", precio: 6000, img: "/img/Tarta de Santiago.png" },
     ];
     
-    // NOTA: Los IDs son temporales y deben coincidir con la URL de destino de tus rutas
-    // (ej: Link to={`/productos/${prod.id}`})
-
     return (
         <>
             <BarraNav />
@@ -53,8 +47,13 @@ function Home() {
                     
                     <div className="product-grid">
                         {productosDestacados.map((prod, index) => (
-                            <Link to={`/productos/${prod.id}`} key={index} className="product-card">
-                                {/* Aseguramos que la ruta de la imagen inicie correctamente */}
+                            // 🔑 CORRECCIÓN: Los comentarios de JSX ahora están en una sola línea o dentro del bloque {}.
+                            // Enviamos el nombre como parámetro 'producto' a la ruta de detalle
+                            <Link 
+                                to={`/producto-detalle?producto=${encodeURIComponent(prod.nombre)}`} 
+                                key={index} 
+                                className="product-card"
+                            >
                                 <img src={prod.img} alt={prod.nombre} className="product-card-img" /> 
                                 <div className="card-body-home">
                                     <h3 className="card-title-home">{prod.nombre}</h3>
@@ -66,14 +65,13 @@ function Home() {
                     </div>
                 </section>
 
-                {/* === 3. SECCIÓN DE BLOG/INFO RÁPIDA (Blog Grid) === */}
+                {/* === 3. SECCIÓN DE BLOG/INFO RÁPIDA === */}
                 <section className="blog-section">
                     <h2 className="section-title color-primary">Novedades y Tendencias</h2>
                     <p className="section-description">Descubre las últimas tendencias y consejos de nuestros Maestros Pasteleros.</p>
 
                     <div className="blog-grid">
                         
-                        {/* Artículo 1: Cake Painting */}
                         <div className="blog-card">
                             <img src="img/pastel pintado.png" alt="Cake Painting" className="blog-card-img" />
                             <h3 className="blog-card-title">Cake Painting: El Arte en el Postre</h3>
@@ -81,7 +79,6 @@ function Home() {
                             <Link to="/blog" className="btn btn-blog">Ver Artículo</Link>
                         </div>
 
-                        {/* Artículo 2: Nueva Tendencia (Ejemplo) */}
                         <div className="blog-card">
                             <img src="img/torta de manjar.png" alt="Tortas Veganas" className="blog-card-img" /> 
                             <h3 className="blog-card-title">Pastelería Con Conciencia: El Auge Vegano</h3>
@@ -89,7 +86,6 @@ function Home() {
                             <Link to="/blog" className="btn btn-blog">Ver Artículo</Link>
                         </div>
 
-                        {/* Artículo 3: Récord Guinness (Ejemplo) */}
                         <div className="blog-card hide-on-mobile">
                             <img src="img/tienda online.png" alt="Récord Guinness" className="blog-card-img" /> 
                             <h3 className="blog-card-title">Nuestra Historia: El Récord de 1995</h3>

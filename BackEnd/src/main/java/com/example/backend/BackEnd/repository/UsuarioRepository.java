@@ -8,6 +8,5 @@ import com.example.backend.BackEnd.model.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
   
-    // Método requerido para la lógica de inicio de sesión
     Optional<Usuario> findByCorreoUsuario(String correoUsuario);
 }

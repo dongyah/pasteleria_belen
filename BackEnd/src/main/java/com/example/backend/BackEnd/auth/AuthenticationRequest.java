@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthenticationRequest {
     
-    // El frontend envía el correo y la contraseña.
-    private String correo;
-    private String password;
+    private String correoUsuario;
+    private String passwordUsuario;
 }

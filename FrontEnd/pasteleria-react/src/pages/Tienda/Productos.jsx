@@ -5,30 +5,31 @@ import "../../styles/Tienda.css";
 import { useCart } from "../../context/CartContext";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
+// 🔑 Importamos SweetAlert2 para mostrar el feedback rápido
+import Swal from 'sweetalert2'; 
+
+// 🔑 IMPORTAR EL MOCKUP DEL ARCHIVO LOCAL (asumo que se llama productos)
+import { productos } from "../../data/productos"; 
 
 function Productos() {
     const { addToCart } = useCart();
     const [filtro, setFiltro] = useState("all");
 
-    // Datos simulados (se mantienen)
-    const productos = [
-        { tipo: "cuadrada", nombre: "Torta Cuadrada de Chocolate", precio: 45000, img: "/img/Torta de chocolate.png" },
-        { tipo: "cuadrada", nombre: "Torta Cuadrada de Frutas", precio: 50000, img: "/img/torta de frutas.png" },
-        { tipo: "circular", nombre: "Torta Circular de Vainilla", precio: 40000, img: "/img/torta de vainilla.png" },
-        { tipo: "circular", nombre: "Torta Circular de Manjar", precio: 42000, img: "/img/torta de manjar.png" },
-        { tipo: "individuales", nombre: "Mousse de Chocolate", precio: 5000, img: "/img/mousse de chocolate.png" },
-        { tipo: "individuales", nombre: "Tiramisú Clásico", precio: 5500, img: "/img/Tiramisú Clásico.png" },
-        { tipo: "sin-azúcar", nombre: "Torta Sin Azúcar de Naranja", precio: 48000, img: "/img/Torta Sin Azúcar de Naranja.png" },
-        { tipo: "sin-azúcar", nombre: "Cheesecake Sin Azúcar", precio: 47000, img: "/img/Cheesecake Sin Azúcar.png" },
-        { tipo: "tradicional", nombre: "Empanada de Manzana", precio: 3000, img: "/img/Empanada de Manzana.png" },
-        { tipo: "tradicional", nombre: "Tarta de Santiago", precio: 6000, img: "/img/Tarta de Santiago.png" },
-        { tipo: "sin-gluten", nombre: "Brownie Sin Gluten", precio: 4000, img: "/img/Brownie Sin Gluten.png" },
-        { tipo: "sin-gluten", nombre: "Pan Sin Gluten", precio: 3500, img: "/img/Pan Sin Gluten.png" },
-        { tipo: "veganos", nombre: "Torta Vegana de Chocolate", precio: 50000, img: "/img/Torta Vegana de Chocolate.png" },
-        { tipo: "veganos", nombre: "Galletas Veganas de Avena", precio: 4500, img: "/img/Galletas Veganas de Avena.png" },
-        { tipo: "especiales", nombre: "Torta Especial de Cumpleaños", precio: 55000, img: "/img/Torta Especial de cumpleaños.png" },
-        { tipo: "especiales", nombre: "Torta Especial de Boda", precio: 60000, img: "/img/Torta Especial de Boda.png" },
-    ];
+    // 🔑 TRANSFORMAR EL OBJETO MOCKUP A UN ARRAY USABLE
+    const productosArray = Object.keys(productos).map(key => ({
+        ...productos[key],
+        // Lógica de filtrado temporal para el mockup
+        tipo: key.toLowerCase().includes('cuadrada') ? 'cuadrada' 
+            : key.toLowerCase().includes('circular') ? 'circular' 
+            : key.toLowerCase().includes('individuales') || key.toLowerCase().includes('mousse') || key.toLowerCase().includes('tiramisú') ? 'individuales'
+            : key.toLowerCase().includes('sin azúcar') ? 'sin-azúcar'
+            : key.toLowerCase().includes('tradicional') || key.toLowerCase().includes('empanada') || key.toLowerCase().includes('tarta de santiago') ? 'tradicional'
+            : key.toLowerCase().includes('sin gluten') ? 'sin-gluten'
+            : key.toLowerCase().includes('vegan') ? 'veganos'
+            : key.toLowerCase().includes('especial') ? 'especiales'
+            : 'all', 
+        keyName: key // Guardamos la clave para el URL
+    }));
 
     const categorias = [
         { key: "all", label: "Todos" },
@@ -43,19 +44,47 @@ function Productos() {
     ];
 
     const productosFiltrados =
-        filtro === "all" ? productos : productos.filter((p) => p.tipo === filtro);
+        filtro === "all" ? productosArray : productosArray.filter((p) => p.tipo === filtro);
+
+    // --- FUNCIÓN PARA AÑADIR AL CARRO (1 UNIDAD CON ALERTA TOAST) ---
+    const handleAddToCartClick = (prod) => {
+        
+        // 1. Crear el objeto para el carrito (siempre con 1 unidad)
+        const productForCart = {
+            nombre: prod.titulo || prod.nombre, 
+            precio: prod.precio,
+            img: prod.imagen_principal || prod.img,
+            cantidad: 1, // ⬅️ Siempre agregamos 1 unidad
+            key: prod.keyName
+        };
+
+        // 2. Agregar al carrito
+        addToCart(productForCart);
+
+        // 3. Feedback: Mostrar Alerta Toast
+        Swal.fire({
+            icon: 'success',
+            title: '¡Añadido a la Bolsa!',
+            text: `${productForCart.nombre} agregado (1 unidad).`,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    };
+    // ----------------------------------------------------------------
 
     return (
         <>
             <BarraNav />
-            <main className="product-page-main"> {/* CLASE PRINCIPAL */}
+            <main className="product-page-main">
                 
                 <div className="product-page-header">
                     <h1 className="product-page-title">Nuestro Catálogo</h1>
                     <p className="product-page-subtitle">Descubre la exclusividad de nuestra repostería por categoría.</p>
                 </div>
 
-                {/* --- NAVEGACIÓN DE CATEGORÍAS (Barra Scrollable) --- */}
+                {/* --- NAVEGACIÓN DE CATEGORÍAS --- */}
                 <div className="category-nav-container">
                     <div className="category-nav">
                         {categorias.map(cat => (
@@ -73,17 +102,23 @@ function Productos() {
                 {/* --- GALERÍA DE PRODUCTOS --- */}
                 <section className="product-gallery">
                     {productosFiltrados.map((prod, index) => (
-                        // Usamos Link para el detalle y la clase gallery-card
-                        <div className="gallery-card" key={index}> 
-                            <Link to={`/producto-detalle?producto=${encodeURIComponent(prod.nombre)}`}>
-                                <img src={prod.img} alt={prod.nombre} className="gallery-card-img" />
+                        <div className="gallery-card" key={prod.keyName || index}> 
+                            
+                            <Link to={`/producto-detalle?producto=${encodeURIComponent(prod.titulo || prod.nombre)}`}>
+                                <img src={prod.imagen_principal || prod.img} alt={prod.titulo || prod.nombre} className="gallery-card-img" />
                                 <div className="gallery-card-info">
-                                    <h3 className="gallery-card-title">{prod.nombre}</h3>
+                                    <h3 className="gallery-card-title">{prod.titulo || prod.nombre}</h3>
                                 </div>
                             </Link>
+                            
                             <div className="card-footer-action">
-                                <p className="gallery-card-price">${prod.precio.toLocaleString()} CLP</p>
-                                <button className="btn btn-card-action" onClick={() => addToCart(prod)}>
+                                <p className="gallery-card-price">${(prod.precio || 0).toLocaleString()} CLP</p>
+                                
+                                {/* 🔑 CLAVE: Usamos la función simple para añadir 1 unidad y mostrar el Toast */}
+                                <button 
+                                    className="btn btn-card-action" 
+                                    onClick={() => handleAddToCartClick(prod)}
+                                >
                                     Añadir al Carrito
                                 </button>
                             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral';
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está cargado
+import Swal from 'sweetalert2'; 
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
 import '../../../styles/Admin_NuevoProducto.css'; 
@@ -12,10 +12,10 @@ const API_BASE_URL = 'http://localhost:8015/api/v1';
 
 function Admin_EditarCategoria() {
 
-    const { id } = useParams();
+    const { id } = useParams(); // Capturamos el ID de la categoría desde la URL
     const navigate = useNavigate();
 
-    // --- ESTADOS: Usamos la convención 'nombreCategoria' para el estado ---
+    // --- ESTADOS ---
     const [nombreCategoria, setNombreCategoria] = useState(''); 
     
     // --- ESTADOS DE CONTROL ---
@@ -23,21 +23,21 @@ function Admin_EditarCategoria() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-    // Carga de SweetAlert2
+    // Carga de SweetAlert2 (Para manejo de errores)
     useEffect(() => {
         const loadScripts = () => {
-             if (!window.Swal) {
-                 const swalScript = document.createElement("script");
-                 swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
-                 swalScript.async = true;
-                 document.body.appendChild(swalScript);
-             }
-             const checkReady = setInterval(() => {
-                 if (window.Swal) {
-                     setIsScriptLoaded(true);
-                     clearInterval(checkReady);
-                 }
-             }, 100);
+            if (!window.Swal) {
+                const swalScript = document.createElement("script");
+                swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
+                swalScript.async = true;
+                document.body.appendChild(swalScript);
+            }
+            const checkReady = setInterval(() => {
+                if (window.Swal) {
+                    setIsScriptLoaded(true);
+                    clearInterval(checkReady);
+                }
+            }, 100);
         };
         loadScripts();
     }, []);
@@ -46,20 +46,38 @@ function Admin_EditarCategoria() {
     useEffect(() => {
         const fetchCategoria = async () => {
             setCargando(true);
-            // Esperamos que Swal esté listo para manejar errores
             if (!isScriptLoaded) return; 
+            
+            const token = localStorage.getItem('jwtToken');
 
+            // 🔑 FIX CRÍTICO: Verificar que el ID sea válido antes de la llamada (previene /find/undefined)
+            if (!id || isNaN(Number(id))) {
+                 window.Swal.fire('Error', 'ID de categoría no válido o faltante.', 'error');
+                 setCargando(false);
+                 return;
+            }
+            
             try {
-                // GET: /api/v1/categorias/find/{id}
-                const response = await axios.get(`${API_BASE_URL}/categorias/find/${id}`);
+                // GET: /api/v1/categorias/find/{id} (Llamada protegida)
+                const response = await axios.get(`${API_BASE_URL}/categorias/find/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}` 
+                    }
+                });
                 const data = response.data;
                 
-                // Rellenar el estado: Asumimos que el campo se llama 'nombreCategoria' o 'nombre'
+                // Rellenar el estado
                 setNombreCategoria(data.nombreCategoria || data.nombre || ''); 
 
             } catch (error) {
                 console.error("Error al cargar la categoría:", error.response || error);
-                window.Swal.fire('Error de Carga', `Categoría ID ${id} no encontrada o error de conexión.`, 'error');
+                
+                let errorMsg = `Categoría ID ${id} no encontrada o error de conexión.`;
+                if (error.response && error.response.status === 403) {
+                     errorMsg = 'Acceso denegado (403): Su token no tiene permisos de edición (ADMIN/VENDEDOR).';
+                }
+                
+                window.Swal.fire('Error de Carga', errorMsg, 'error');
             } finally {
                 setCargando(false);
             }
@@ -78,14 +96,14 @@ function Admin_EditarCategoria() {
              console.error('SweetAlert2 no está listo.');
              return;
         }
-
-        // Validación de campo usando el estado corregido
         if (!nombreCategoria.trim()) {
             window.Swal.fire('Error de Validación', 'El nombre de la categoría es obligatorio.', 'error');
             return;
         }
         
         setIsSubmitting(true);
+        const token = localStorage.getItem('jwtToken');
+
         window.Swal.fire({
             title: '¿Confirmar Actualización?',
             text: `Se modificará la categoría ID ${id}.`,
@@ -98,15 +116,19 @@ function Admin_EditarCategoria() {
                 try {
                     // --- PAYLOAD AJUSTADO ---
                     const categoriaPayload = {
-                        // Enviamos el nombre con el sufijo (o sin él, dependiendo de la entidad)
-                        // Si tu entidad usa 'nombreCategoria' en el PUT, usa el primer caso.
-                        // Si usa 'nombre', usa el segundo caso.
+                        // Enviamos el nombre tal como está en el estado. 
+                        // El backend debe esperar este campo.
                         nombreCategoria: nombreCategoria, 
-                        // nombre: nombreCategoria, // Opción B: Si la entidad usa 'nombre'
+                        // O si la entidad Java usa solo 'nombre':
+                        // nombre: nombreCategoria, 
                     };
                     
                     // PUT: /api/v1/categorias/update/{id}
-                    await axios.put(`${API_BASE_URL}/categorias/update/${id}`, categoriaPayload);
+                    await axios.put(`${API_BASE_URL}/categorias/update/${id}`, categoriaPayload, {
+                        headers: {
+                            'Authorization': `Bearer ${token}` 
+                        }
+                    });
 
                     window.Swal.fire('¡Actualizado!', 'La categoría ha sido modificada.', 'success')
                         .then(() => navigate('/admin/categorias')); // Redirigir al listado
@@ -114,7 +136,7 @@ function Admin_EditarCategoria() {
                 } catch (error) {
 
                     console.error("Error al actualizar:", error.response || error);
-                    let errorMsg = 'Error en la actualización. Revise la ruta PUT o si el nombre ya existe.';
+                    let errorMsg = 'Error en la actualización. Revise la ruta PUT, permisos (403) o si el nombre ya existe.';
                     window.Swal.fire('Error', errorMsg, 'error');
                 }
             }
@@ -153,10 +175,10 @@ function Admin_EditarCategoria() {
                             <div className="fila-formulario" style={{maxWidth: '400px', margin: '0 auto'}}>
                                 <input 
                                     type="text" 
-                                    name="nombreCategoria" // CLAVE: Usamos el nombre del campo corregido
+                                    name="nombreCategoria" 
                                     placeholder="Nombre de la Categoría" 
                                     value={nombreCategoria} 
-                                    onChange={(e) => setNombreCategoria(e.target.value)} // Actualiza el estado corregido
+                                    onChange={(e) => setNombreCategoria(e.target.value)} 
                                     disabled={isSubmitting || cargando}
                                     required
                                     style={{width: '100%'}}

@@ -6,71 +6,80 @@ import BarraNav from "./BarraNav";
 import Footer from "./Footer";
 import Swal from 'sweetalert2';
 
-// URL base del backend
-const API_BASE_URL = "http://localhost:8015/api"; 
+// 🔑 CORRECCIÓN DE RUTA
+const API_BASE_URL = "http://localhost:8015/api/v1"; 
 const comunasPorRegion = window.comunasPorRegion || {}; 
 
 function Checkout() {
     const { cart, total, clearCart } = useCart();
     const navigate = useNavigate();
     
-    // Asumimos que esta info existe si el usuario está logueado
-    const usuarioLogueado = JSON.parse(localStorage.getItem('usuarioActual')); 
+    const userId = localStorage.getItem('userId');
     
     const [clienteData, setClienteData] = useState({
         nombre: '', apellidos: '', correo: '',
+        rut: '', 
+        telefono: '', 
         calle: '', departamento: '', region: '', comuna: '',
         indicaciones: '',
-        // CLAVE: Incluir el ID del usuario si está logueado
-        usuarioId: usuarioLogueado ? usuarioLogueado.id : null,
+        usuarioId: userId ? Number(userId) : null, 
     });
     
     const [comunasDisponibles, setComunasDisponibles] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isUserLoaded, setIsUserLoaded] = useState(false);
 
-    // --- EFECTO 1: Cargar Datos del Usuario Logueado ---
+    // --- EFECTO 1: Cargar Datos del Usuario Logueado (FIX de TypeError) ---
     useEffect(() => {
-        if (usuarioLogueado && usuarioLogueado.correo && !isUserLoaded) {
-            // Suponemos que tienes un endpoint para obtener el perfil completo
+        const token = localStorage.getItem('jwtToken');
+        
+        if (token && clienteData.usuarioId && !isUserLoaded) {
             const fetchUserProfile = async () => {
                 try {
-                    // LLamada al backend para obtener todos los datos de dirección y nombre del usuario logueado
-                    // Endpoint necesario en tu backend: GET /api/usuarios/perfil/{correo}
-                    const response = await axios.get(`${API_BASE_URL}/usuarios/perfil/${usuarioLogueado.correo}`);
+                    const response = await axios.get(`${API_BASE_URL}/usuarios/find/${clienteData.usuarioId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
                     const userProfile = response.data;
                     
-                    // 1. Rellenar campos de contacto y dirección
-                    setClienteData(prev => ({
-                        ...prev,
-                        nombre: userProfile.nombre || prev.nombre,
-                        apellidos: userProfile.apellidos || prev.apellidos,
-                        correo: userProfile.correo || prev.correo,
-                        calle: userProfile.direccion || prev.calle, // Mapeamos 'direccion' a 'calle'
-                        region: userProfile.region || prev.region,
-                        comuna: userProfile.comuna || prev.comuna,
-                        // ID ya está en el estado inicial
-                    }));
+                    // 🔑 FIX FRONTAL: Verificar que userProfile no sea null/undefined. 
+                    if (userProfile) { 
+                        setClienteData(prev => ({
+                            ...prev,
+                            nombre: userProfile.nombreUsuario || prev.nombre,
+                            apellidos: userProfile.apellidosUsuario || prev.apellidos,
+                            correo: userProfile.correoUsuario || prev.correo,
+                            rut: userProfile.rutUsuario || prev.rut, 
+                            telefono: userProfile.telefonoUsuario || prev.telefono, 
+                            calle: userProfile.direccionUsuario || prev.calle, 
+                            region: userProfile.regionUsuario || prev.region,
+                            comuna: userProfile.comunaUsuario || prev.comuna,
+                        }));
+                    } else {
+                         console.warn("Perfil de usuario logueado no encontrado o vacío en el backend.");
+                    }
                     setIsUserLoaded(true);
+                    
                 } catch (error) {
                     console.error("Error al cargar perfil del usuario:", error);
-                    setIsUserLoaded(true); // Evita reintentos fallidos
+                    setIsUserLoaded(true); 
                 }
             };
             fetchUserProfile();
+        } else if (!token && userId) {
+             setIsUserLoaded(true); 
         }
-    }, [usuarioLogueado, isUserLoaded]);
+    }, [clienteData.usuarioId, isUserLoaded]);
     
-    // --- EFECTO 2: Lógica de Comunas y Regiones (se mantiene) ---
+    // --- EFECTO 2: Lógica de Comunas y Regiones ---
     useEffect(() => {
-        // ... (Tu lógica para actualizar comunas) ...
         if (clienteData.region && comunasPorRegion) {
             setComunasDisponibles(comunasPorRegion[clienteData.region] || []);
         } else {
             setComunasDisponibles([]);
         }
-        // Ojo: No resetear la comuna si ya estaba cargada por el perfil
-        // setClienteData(prev => ({ ...prev, comuna: '' })); 
     }, [clienteData.region]);
 
     const handleChange = (e) => {
@@ -81,62 +90,83 @@ function Checkout() {
     const handlePayment = async (e) => {
         e.preventDefault();
         
-        // ... (Validaciones de campos obligatorios) ...
-        const requiredFields = ['nombre', 'apellidos', 'correo', 'calle', 'region', 'comuna'];
-        const isValid = requiredFields.every(field => clienteData[field].trim() !== '');
+        // Validaciones de campos obligatorios 
+        const requiredFields = ['nombre', 'apellidos', 'correo', 'rut', 'telefono', 'calle', 'region', 'comuna'];
+        const isValid = requiredFields.every(field => clienteData[field] && clienteData[field].trim() !== '');
 
         if (!isValid) {
-            Swal.fire('Datos Faltantes', 'Por favor, complete todos los campos de cliente y envío.', 'warning');
+            Swal.fire('Datos Faltantes', 'Por favor, complete todos los campos obligatorios (*).', 'warning');
             return;
+        }
+        if (cart.length === 0) {
+             Swal.fire('Carrito Vacío', 'Agregue productos a su carrito antes de pagar.', 'warning');
+             return;
         }
 
         setIsProcessing(true);
         
-        // --- PREPARACIÓN DE LA ORDEN PARA EL BACKEND (BOLETA/ORDEN DE COMPRA) ---
-        const orderData = {
-            // Si el cliente está logueado, se envía el ID para relacionar el historial
+        // 🔑 FIX BACKEND: Convertimos el total a Integer (entero)
+        const totalInt = Math.round(total);
+        
+        // 1. CONSTRUCCIÓN DEL DTO OrderRequest PARA EL BACKEND
+        const orderRequestPayload = {
             usuarioId: clienteData.usuarioId, 
-            // Datos del cliente y envío (que puede haber modificado)
-            cliente: clienteData,
-            // Productos del carrito
+            total: totalInt, 
+            
+            // DTO ClienteDataDTO
+            cliente: {
+                nombre: clienteData.nombre,
+                apellidos: clienteData.apellidos,
+                correo: clienteData.correo,
+                rut: clienteData.rut,
+                telefono: clienteData.telefono,
+                calle: clienteData.calle,
+                departamento: clienteData.departamento,
+                region: clienteData.region,
+                comuna: clienteData.comuna,
+                indicaciones: clienteData.indicaciones,
+            },
+            
+            // DTO ProductoItemDTO[]
             productos: cart.map(item => ({
                 productoNombre: item.nombre,
-                productoId: item.id, // Suponemos que tus productos tienen ID
+                productoId: item.id, 
                 cantidad: item.cantidad,
                 precioUnitario: item.precio
             })),
-            total: total,
-            fecha: new Date().toISOString(),
-            estado: 'Pagado - Pendiente de Envío' // Estado inicial
         };
 
         try {
-            // Endpoint necesario en tu backend: POST /api/ordenes/crear
-            // Asumimos que esta llamada crea la orden y genera el ID de boleta
-            // const response = await axios.post(`${API_BASE_URL}/ordenes/crear`, orderData);
-            // const orderId = response.data.orderId; // El backend devuelve el ID
-
-            // *** SIMULACIÓN (Reemplazar con la llamada Axios) ***
-            await new Promise(resolve => setTimeout(resolve, 1500)); 
-            const orderId = `ORDER${Math.floor(Math.random() * 900000) + 100000}`;
-            // *************************************************
-
+            // 2. LLAMADA REAL AL ENDPOINT DE CREACIÓN DE ORDENES
+            const response = await axios.post(`${API_BASE_URL}/ordenes/create`, orderRequestPayload);
+            
+            const orderId = response.data.idOrden; 
+            
             clearCart();
             Swal.fire('Pago Exitoso', `Su orden #${orderId} ha sido confirmada.`, 'success')
                 .then(() => {
-                     // Pasamos los datos al componente de confirmación
                     navigate(`/confirmacion/${orderId}`, { state: { cliente: clienteData, total: total, cart: cart } });
                 });
 
 
         } catch (error) {
-            Swal.fire('Error de Pago', 'Hubo un problema al procesar su pago. Inténtelo de nuevo.', 'error');
+            console.error("Error al procesar la orden:", error.response || error);
+            let errorText = 'Hubo un problema al procesar su pago. Verifique el servidor.';
+            
+            if (error.response && error.response.status === 403) {
+                // Si ves este error, DEBES REINICIAR el servidor Spring Boot
+                errorText = 'Acceso Denegado (403): El servidor no permite la compra de invitados. ¡Reinicie el Backend!';
+            } else if (error.response && error.response.status === 500) {
+                 errorText = 'Error interno (500): Verifique logs por Constraint Violation o la falta de @Builder en Orden.java';
+            } else if (error.response && error.response.data && typeof error.response.data === 'string') {
+                errorText = error.response.data;
+            }
+            
+            Swal.fire('Error de Pago', errorText, 'error');
         } finally {
             setIsProcessing(false);
         }
     };
-    
-    // ... (JSX se mantiene igual, pero los inputs usan los valores y manejadores actualizados) ...
 
     return (
         <>
@@ -153,7 +183,7 @@ function Checkout() {
                                     <div key={index} className="checkout-item-row">
                                         <span className="item-name">{item.nombre}</span>
                                         <span className="item-qty">x{item.cantidad}</span>
-                                        <span className="item-price">${(item.precio * item.cantidad).toLocaleString()}</span>
+                                        <span className="item-price">${(item.precio * item.cantidad).toLocaleString()} CLP</span>
                                     </div>
                                 ))}
                             </div>
@@ -168,7 +198,11 @@ function Checkout() {
                                 <input type="text" name="nombre" placeholder="Nombre *" value={clienteData.nombre} onChange={handleChange} required />
                                 <input type="text" name="apellidos" placeholder="Apellidos *" value={clienteData.apellidos} onChange={handleChange} required />
                             </div>
-                            <input type="email" name="correo" placeholder="Correo *" value={clienteData.correo} onChange={handleChange} required />
+                            <div className="input-group-row">
+                                <input type="text" name="rut" placeholder="RUT *" value={clienteData.rut} onChange={handleChange} required />
+                                <input type="tel" name="telefono" placeholder="Teléfono *" value={clienteData.telefono} onChange={handleChange} required />
+                            </div>
+                            <input type="email" name="correo" placeholder="Correo *" value={clienteData.correo} onChange={handleChange} required className="full-width-input" />
                             {clienteData.usuarioId && <p style={{fontSize: '0.85rem', color: '#007bff'}}>Datos cargados de su perfil.</p>}
                         </div>
                     </div>
@@ -182,7 +216,7 @@ function Checkout() {
                                 <input type="text" name="departamento" placeholder="Departamento/Casa (opcional)" value={clienteData.departamento} onChange={handleChange} />
                             </div>
                             <div className="input-group-row">
-                                <select name="region" value={clienteData.region} onChange={handleChange} required>
+                                <select name="region" value={clienteData.region} onChange={handleChange} required className="form-control-select">
                                     <option value="">Seleccionar Región *</option>
                                     {Object.keys(comunasPorRegion).map(regionKey => (
                                         <option key={regionKey} value={regionKey}>
@@ -190,14 +224,14 @@ function Checkout() {
                                         </option>
                                     ))}
                                 </select>
-                                <select name="comuna" value={clienteData.comuna} onChange={handleChange} disabled={!clienteData.region} required>
+                                <select name="comuna" value={clienteData.comuna} onChange={handleChange} disabled={!clienteData.region} required className="form-control-select">
                                     <option value="">Seleccionar Comuna *</option>
                                     {comunasDisponibles.map(com => (
                                         <option key={com} value={com}>{com}</option>
                                     ))}
                                 </select>
                             </div>
-                            <textarea name="indicaciones" placeholder="Indicaciones para la entrega (ej: timbre no funciona, dejar en conserjería)" value={clienteData.indicaciones} onChange={handleChange}></textarea>
+                            <textarea name="indicaciones" placeholder="Indicaciones para la entrega (ej: timbre no funciona, dejar en conserjería)" value={clienteData.indicaciones} onChange={handleChange} className="full-width-input"></textarea>
                         </div>
 
                         <button type="submit" className="btn btn-pay-now" disabled={isProcessing}>

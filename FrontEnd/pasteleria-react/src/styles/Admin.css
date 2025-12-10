@@ -245,6 +245,53 @@ body {
   text-decoration: underline;
 }
 
+/* --- Estilos para la Boleta (Admin_MostrarBoleta.jsx) --- */
+
+/* Contenedor principal para la boleta. Usado para impresión. */
+.boleta-print-area {
+    max-width: 800px; /* Ancho máximo para el formato de impresión */
+    margin: 30px auto;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+/* Estilos de tabla para el detalle de productos */
+.boleta-print-area .table {
+    margin-top: 15px;
+    font-size: 0.9rem;
+}
+
+.boleta-print-area h5 {
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+/* Estilos para impresión (Oculta botones y fondo) */
+@media print {
+    /* Oculta la barra lateral y los botones de acción */
+    .admin-layout, 
+    .d-flex.justify-content-between.align-items-center { 
+        display: none !important;
+    }
+
+    /* Muestra solo el contenido principal de la boleta */
+    .boleta-print-area {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Muestra la página de detalle de la boleta */
+    .contenido-principal {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
 
 /* =============================================== */
 /* ===      RESPONSIVE DESIGN     === */

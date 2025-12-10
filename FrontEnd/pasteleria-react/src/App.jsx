@@ -1,6 +1,7 @@
-// Importaciones generales
+// Importaciones generales (Se mantienen)
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext"; 
+import ProtectedRoute from "../../pasteleria-react/src/components/ProtectedRoute";
 
 // Componentes de la tienda (parte pública)
 import Blog from "./pages/Tienda/Blog";
@@ -33,7 +34,7 @@ import Admin_GestionCategorias from "./pages/admin/Categorías/Admin_GestionCate
 import Admin_EditarCategoria from "./pages/admin/Categorías/Admin_EditarCategoria";
 
 
-// Estilos
+// Estilos (Se mantienen)
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/Admin.css";
 import "./styles/Admin_NuevoUsuario.css";
@@ -49,44 +50,55 @@ function App() {
       <BrowserRouter>
         <Routes>
 
-		  {/* ---------- RUTAS PÚBLICAS (tienda) ---------- */}
-		  <Route path='/' element={<Home />} />
-		  {/* Ruta alternativa para la tienda (permite navegacion desde /tienda) */}
-		  <Route path='/tienda' element={<Home />} />
-            <Route path='/nosotros' element={<Nosotros />} />
-          	<Route path='/blog' element={<Blog />} />
-          	<Route path='/productos' element={<Productos />} />
-          	<Route path='/carrito' element={<Carrito />} />
-      	    <Route path='/registro' element={<Registro />} />
-          	<Route path='/login' element={<Login />} />
-          	<Route path='/contacto' element={<Contacto />} />
-          	<Route path='/producto-detalle' element={<ProDetalle />} />
+          {/* ---------- RUTAS PÚBLICAS (Tienda, Login, Registro, Carrito, etc.) ---------- */}
+          <Route path='/' element={<Home />} />
+          <Route path='/tienda' element={<Home />} />
+          <Route path='/nosotros' element={<Nosotros />} />
+          <Route path='/blog' element={<Blog />} />
+          <Route path='/productos' element={<Productos />} />
+          <Route path='/carrito' element={<Carrito />} />
+          <Route path='/registro' element={<Registro />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/contacto' element={<Contacto />} />
+          <Route path='/producto-detalle' element={<ProDetalle />} />
+          <Route path='/checkout' element={<Checkout />} />
+          <Route path='/confirmacion/:orderId' element={<Confirmacion />} />
 
-          	<Route path='/checkout' element={<Checkout />} />
-          	<Route path='/confirmacion/:orderId' element={<Confirmacion />} />
+            {/* ---------- RUTAS ADMINISTRATIVAS PROTEGIDAS ---------- */}
+            
+            {/* 🛡️ GRUPO 1: DASHBOARD Y GESTIÓN OPERATIVA (ADMIN y VENDEDOR) */}
+            {/* 🔑 CLAVE: Mover el dashboard aquí para que el Vendedor no obtenga un 404/página en blanco */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'VENDEDOR']} />}>
+                
+                {/* Dashboard (Página de inicio general del panel) */}
+                <Route path='/admin' element={<Admin_Dashboard />} />
+                
+                {/* Operaciones Diarias */}
+                <Route path='/admin/productos' element={<Admin_GestionProductos />} />
+                <Route path='/admin/nuevo-producto' element={<Admin_NuevoProducto />} />
+                <Route path='/admin/editar-producto/:id' element={<Admin_EditarProducto />} />
+                <Route path='/admin/ordenes' element={<Admin_GestionOrdenes />} />
+                <Route path='/admin/ordenes/:id' element={<Admin_MostrarBoleta />} />
+                <Route path='/admin/nueva-categoria' element={<Admin_NuevaCategoria />} />
+                <Route path='/admin/categorias' element={<Admin_GestionCategorias />} />
+                <Route path='/admin/editar-categoria/:id' element={<Admin_EditarCategoria />} />
+                <Route path='/admin/perfil' element={<Admin_Perfil />} />
+                <Route path='/admin/usuarios/historial/:id' element={<Admin_HistorialCompras />} /> {/* Historial necesario para Vendedor/Soporte */}
+            </Route>
 
-          	{/* ---------- RUTAS ADMINISTRATIVAS ---------- */}
-          	<Route path='/admin' element={<Admin_Dashboard />} />
-          	<Route path='/admin/usuarios' element={<Admin_GestionUsuarios />} />
-        	  <Route path='/admin/nuevo-usuario' element={<Admin_NuevoUsuario />} />
-          	<Route path='/admin/editar-usuario/:id' element={<Admin_EditarUsuario />} />
-          	<Route path='/admin/usuarios/historial/:id' element={<Admin_HistorialCompras />} />
+            {/* 🛡️ GRUPO 2: CONTROL TOTAL (SOLO ADMIN) */}
+            {/* 🔑 CLAVE: Estas rutas mantienen la máxima restricción */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                <Route path='/admin/usuarios' element={<Admin_GestionUsuarios />} />
+                <Route path='/admin/nuevo-usuario' element={<Admin_NuevoUsuario />} />
+                <Route path='/admin/editar-usuario/:id' element={<Admin_EditarUsuario />} />
+                <Route path='/admin/reportes' element={<Admin_Reportes />} />
+            </Route>
 
-          	<Route path='/admin/productos' element={<Admin_GestionProductos />} />
-          	<Route path='/admin/nuevo-producto' element={<Admin_NuevoProducto />} />
-      	    <Route path='/admin/editar-producto/:id' element={<Admin_EditarProducto />} />
+            {/* Opcional: Ruta 404 (Not Found) */}
+            <Route path="*" element={<h1>404 | Página No Encontrada</h1>} />
 
-  	        <Route path='/admin/ordenes' element={<Admin_GestionOrdenes />} />
-          	<Route path='/admin/ordenes/:id' element={<Admin_MostrarBoleta />} />
-
-          	<Route path='/admin/reportes' element={<Admin_Reportes />} />
-          	<Route path='/admin/perfil' element={<Admin_Perfil />} />
-
-          	<Route path='/admin/nueva-categoria' element={<Admin_NuevaCategoria />} />
-          	<Route path='/admin/categorias' element={<Admin_GestionCategorias />} />
-          	<Route path='/admin/editar-categoria/:id' element={<Admin_EditarCategoria />} />
-
-          </Routes>
+        </Routes>
       </BrowserRouter>
     </CartProvider>
   );

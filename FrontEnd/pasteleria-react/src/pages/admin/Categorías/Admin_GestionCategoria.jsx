@@ -1,98 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral'; 
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Asumimos que SweetAlert2 está disponible
+import Swal from 'sweetalert2';
 import '../../../styles/Admin.css';
-import '../../../styles/Admin_Gestion.css';
+import '../../../styles/Admin_Gestion.css'; 
 
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Admin_GestionCategorias() {
-
+    const navigate = useNavigate();
     const [categorias, setCategorias] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
-    const [isScriptLoaded, setIsScriptLoaded] = useState(false); 
 
-    // Carga de SweetAlert2
-    useEffect(() => {
-        if (!window.Swal) {
-            const swalScript = document.createElement("script");
-            swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
-            swalScript.async = true;
-            document.body.appendChild(swalScript);
-            swalScript.onload = () => setIsScriptLoaded(true);
-        } else {
-            setIsScriptLoaded(true);
-        }
-    }, []); 
-
-    // Fetch de categorías
     const fetchCategorias = async () => {
         setCargando(true);
         setError(null);
+        
+        const token = localStorage.getItem('jwtToken');
+
+        // La gestión de categorías requiere ser un usuario administrativo
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
         try {
-            const response = await axios.get(`${API_BASE_URL}/categorias/all`);
-            // Nota: Asumimos que el backend puede devolver 'nombre' o 'nombreCategoria'.
-            // Usamos lo que esté disponible.
-            setCategorias(response.data); 
+            // Llamada protegida a GET /api/v1/categorias/all
+            const response = await axios.get(`${API_BASE_URL}/categorias/all`, {
+                headers: {
+                    'Authorization': `Bearer ${token}` 
+                }
+            });
+            
+            // Aseguramos que la respuesta sea un array antes de asignarla
+            if (Array.isArray(response.data)) {
+                setCategorias(response.data); 
+            } else {
+                console.warn("El backend no devolvió un array para categorías.");
+                setCategorias([]);
+            }
+
         } catch (err) {
             console.error("Error al cargar categorías:", err.response || err);
             
-            let errorMsg = "Error al conectar con el servidor o cargar categorías. Revise la ruta /api/categorias/all.";
-            setError(errorMsg);
+            let errorMsg = "Error al cargar categorías. Verifique el servidor y permisos.";
+            if (err.response && (err.response.status === 403 || err.response.status === 401)) {
+                 errorMsg = "Acceso denegado. Rol insuficiente (Su token no tiene el rol ADMIN/VENDEDOR).";
+            }
+            
+            Swal.fire('Error de Carga', errorMsg, 'error');
+            setError(errorMsg); 
         } finally {
             setCargando(false);
         }
     };
     
-    useEffect(() => {
-        if (isScriptLoaded) {
-            fetchCategorias(); 
-        }
-    }, [isScriptLoaded]); 
-    
-    // Handler de eliminación
+    // Función para manejar la eliminación
     const handleDelete = async (idCategoria) => {
-        if (!isScriptLoaded || !window.Swal) {
-            console.error('SweetAlert2 no está cargado.');
-            window.alert('Error: Herramienta de confirmación no disponible.');
-            return;
-        }
+        const token = localStorage.getItem('jwtToken');
 
-        const result = await window.Swal.fire({
+        Swal.fire({
             title: '¿Estás seguro?',
-            text: `Se eliminará la categoría ID ${idCategoria}.`,
+            text: "¡No podrás revertir esto!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, ¡Eliminar!',
+            confirmButtonText: 'Sí, ¡eliminar!',
             cancelButtonText: 'Cancelar'
-        });
-
-        if (result.isConfirmed) {
-            try {
-                // Llamada DELETE al Backend
-                await axios.delete(`${API_BASE_URL}/categorias/delete/${idCategoria}`); 
-                
-                setCategorias(categorias.filter(c => c.id !== idCategoria));
-                window.Swal.fire('¡Eliminado!', 'La categoría ha sido eliminada correctamente.', 'success');
-
-            } catch (err) {
-                console.error("Error al eliminar:", err.response || err);
-                let errorMsg = 'Error al intentar eliminar. Podría tener productos asociados.';
-                window.Swal.fire('Error', errorMsg, 'error');
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    // DELETE: /api/v1/categorias/delete/{id}
+                    await axios.delete(`${API_BASE_URL}/categorias/delete/${idCategoria}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}` 
+                        }
+                    });
+                    
+                    Swal.fire('¡Eliminada!', 'La categoría ha sido eliminada.', 'success');
+                    fetchCategorias(); // Recargar la lista
+                } catch (error) {
+                    console.error("Error al eliminar la categoría:", error.response || error);
+                    let errorMsg = 'Error al eliminar. La categoría podría tener productos asociados.';
+                    Swal.fire('Error', errorMsg, 'error');
+                }
             }
-        }
+        });
     };
     
-    // Función de ayuda para obtener el nombre (priorizando 'nombreCategoria' si existe)
-    const getNombre = (categoria) => {
-        return categoria.nombreCategoria || categoria.nombre || 'Nombre No Definido';
-    };
-
+    useEffect(() => {
+        fetchCategorias();
+    }, []); 
 
     if (cargando) {
         return (
@@ -111,7 +112,6 @@ function Admin_GestionCategorias() {
             </div>
         );
     }
-    
 
     return (
         <div className="admin-layout">
@@ -120,8 +120,10 @@ function Admin_GestionCategorias() {
                 <main className="admin-contenido p-4">
                     <div className="card shadow-sm">
                         <div className="card-header d-flex justify-content-between align-items-center">
-                            <h5 className="mb-0">Gestión de Categorías ({categorias.length} Registradas)</h5>
-                            <Link to="/admin/nueva-categoria" className="btn btn-primary">Nueva Categoría</Link>
+                            <h5 className="mb-0">Gestión de Categorías ({categorias.length} Encontradas)</h5>
+                            <Link to="/admin/nueva-categoria" className="btn btn-success">
+                                + Agregar Nueva Categoría
+                            </Link>
                         </div>
                         <div className="card-body">
                             <div className="table-responsive">
@@ -129,25 +131,27 @@ function Admin_GestionCategorias() {
                                     <thead className="table-light">
                                         <tr>
                                             <th scope="col" className="text-center">ID</th>
-                                            <th scope="col">Nombre de Categoría</th>
+                                            <th scope="col">Nombre</th>
                                             <th scope="col" className="text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {categorias.length > 0 ? (
+                                        {Array.isArray(categorias) && categorias.length > 0 ? (
                                             categorias.map(categoria => (
-                                                <tr key={categoria.id}> 
-                                                    <td className="text-center">{categoria.id}</td>
-                                                    {/* --- CORRECCIÓN APLICADA AQUÍ --- */}
-                                                    <td>{getNombre(categoria)}</td> 
+                                                <tr key={categoria.idCategoria}> 
+                                                    <td className="text-center">{categoria.idCategoria}</td>
+                                                    <td>{categoria.nombreCategoria}</td>
                                                     <td className="text-center">
-                                                        {/* Navegación a la vista de edición */}
-                                                        <Link to={`/admin/editar-categoria/${categoria.id}`} className="btn btn-sm btn-primary me-2">Editar</Link>
-                                                        
-                                                        {/* Botón Eliminar */}
+                                                        {/* 🔑 FIX CRÍTICO: Aquí se corrige el enlace de navegación */}
+                                                        <Link 
+                                                            to={`/admin/editar-categoria/${categoria.idCategoria}`} 
+                                                            className="btn btn-sm btn-warning me-2"
+                                                        >
+                                                            Editar
+                                                        </Link>
                                                         <button 
+                                                            onClick={() => handleDelete(categoria.idCategoria)} 
                                                             className="btn btn-sm btn-danger"
-                                                            onClick={() => handleDelete(categoria.id)} 
                                                         >
                                                             Eliminar
                                                         </button>
@@ -156,15 +160,12 @@ function Admin_GestionCategorias() {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="3" className="text-center text-muted">No hay categorías registradas en el servidor.</td>
+                                                <td colSpan="3" className="text-center text-muted">No hay categorías registradas.</td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                        <div className="card-footer d-flex justify-content-center" id="paginacionCategorias">
-                            <p className="text-muted small">Mostrando {categorias.length} categorías.</p>
                         </div>
                     </div>
                 </main>
