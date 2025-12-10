@@ -9,16 +9,15 @@ import '../../../styles/Admin_NuevoProducto.css';
 
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
-// Estado inicial: Usamos cadenas vacías para que los placeholders se muestren (para los "hints")
 const initialProductState = {
     codigo_producto: '',
     nombre_producto: '',
-    precio_producto: '', // Se convierte a número al enviar
-    stock_producto: '',  // Se convierte a número al enviar
-    stock_critico_producto: '', // Se convierte a número al enviar
+    precio_producto: '',
+    stock_producto: '',
+    stock_critico_producto: '',
     descripcion_producto: '',
     imagen: null, 
-    categoria_id: '', // ID numérico de la categoría seleccionada
+    nombreCategoriaProducto: '',
 };
 
 function Admin_NuevoProducto() {
@@ -33,7 +32,6 @@ function Admin_NuevoProducto() {
         const fetchCategorias = async () => {
             setCargandoCategorias(true);
             try {
-                // Endpoint /categorias/all (Debe ser público o estar en permitAll)
                 const response = await axios.get(`${API_BASE_URL}/categorias/all`);
                 
                 if (Array.isArray(response.data)) {
@@ -52,15 +50,17 @@ function Admin_NuevoProducto() {
     const handleChange = (e) => {
         const { name, value, type } = e.target;
         
-        // Maneja el valor como cadena vacía si está vacío, o conviértelo a número.
-        let val;
-        if (type === 'number' || name === 'categoria_id') {
-             val = value === '' ? '' : Number(value);
+        if (name === 'nombreCategoriaProducto') {
+            setProductoData(prev => ({ ...prev, [name]: value }));
         } else {
-             val = value;
+            let val;
+            if (type === 'number') {
+                val = value === '' ? '' : Number(value);
+            } else {
+                val = value;
+            }
+            setProductoData(prev => ({ ...prev, [name]: val }));
         }
-
-        setProductoData(prev => ({ ...prev, [name]: val }));
     };
 
     const handleImageChange = (e) => {
@@ -71,36 +71,50 @@ function Admin_NuevoProducto() {
         e.preventDefault();
         
         // 1. Validaciones
-        if (!productoData.nombre_producto || !productoData.categoria_id || !productoData.precio_producto || productoData.precio_producto <= 0) {
+        if (!productoData.nombre_producto || !productoData.nombreCategoriaProducto || !productoData.precio_producto || productoData.precio_producto <= 0) {
             Swal.fire('Error', 'Por favor, complete todos los campos obligatorios (Nombre, Precio, Categoría).', 'warning');
             return;
         }
 
         setIsSubmitting(true);
-        const token = localStorage.getItem('jwtToken');
+        const token = localStorage.getItem('jwtToken') || localStorage.getItem('authToken');
+        const userRole = localStorage.getItem('userRole') || localStorage.getItem('roleUsuario');
+        
+        console.log('Token disponible:', token ? 'Sí' : 'NO - ERROR');
+        console.log('Rol del usuario:', userRole);
+        console.log('Token (primeros 50 caracteres):', token ? token.substring(0, 50) + '...' : 'NINGUNO');
 
-        // 2. Construir FormData (Necesario para enviar la imagen y los datos JSON)
+        if (!token) {
+            Swal.fire('Error', 'No hay token disponible. Por favor, inicia sesión nuevamente.', 'error');
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (!userRole || (userRole !== 'ADMIN' && userRole !== 'VENDEDOR')) {
+            Swal.fire('Error', `Tu rol es: ${userRole}. Solo ADMIN y VENDEDOR pueden crear productos.`, 'error');
+            setIsSubmitting(false);
+            return;
+        }
+
+        // 2. Construir FormData
         const formData = new FormData();
         
-        // Asegúrate de que las claves coincidan EXACTAMENTE con el DTO o Entity de Java
         formData.append('codigo_producto', productoData.codigo_producto || '');
         formData.append('nombre_producto', productoData.nombre_producto);
         formData.append('precio_producto', productoData.precio_producto);
         formData.append('stock_producto', productoData.stock_producto || 0);
         formData.append('stock_critico_producto', productoData.stock_critico_producto || 0);
         formData.append('descripcion_producto', productoData.descripcion_producto);
-        formData.append('categoria_id', productoData.categoria_id); 
+        formData.append('nombreCategoriaProducto', productoData.nombreCategoriaProducto);
 
         if (productoData.imagen) {
              formData.append('imagen', productoData.imagen);
         }
         
-        // 3. Envío al Backend
         try {
             // POST: /api/v1/productos/save
             const response = await axios.post(`${API_BASE_URL}/productos/save`, formData, {
                 headers: {
-                    // 🔑 CRÍTICO: Envío del token para la autorización (evitar 403)
                     'Authorization': `Bearer ${token}`, 
                 }
             });
@@ -114,7 +128,7 @@ function Admin_NuevoProducto() {
             
             let errorMsg = 'Error al guardar el producto. Verifique la conexión o el formato de datos.';
              if (error.response && error.response.status === 403) {
-                errorMsg = 'Acceso denegado (403). Su token no tiene rol ADMIN/VENDEDOR.';
+                errorMsg = 'Acceso denegado (403). Verifica que:\n1. Tu usuario sea ADMIN\n2. El token no haya expirado\n3. Cierra sesión y vuelve a iniciar.';
             } else if (error.response && error.response.status === 400) {
                  errorMsg = 'Error 400: Datos incompletos o mal formateados (JSON, Image o ID).';
             }
@@ -158,7 +172,6 @@ function Admin_NuevoProducto() {
                                 onChange={handleChange} 
                             />
                             
-                            {/* 🔑 CAMPOS NUMÉRICOS CON HINTS MEJORADOS */}
                             <div className="fila-formulario">
                                 <input 
                                     type="number" 
@@ -190,10 +203,9 @@ function Admin_NuevoProducto() {
                             
                             <div className="fila-formulario">
                                 
-                                {/* DROPDOWN DE CATEGORÍAS */}
                                 <select 
-                                    name="categoria_id" 
-                                    value={productoData.categoria_id} 
+                                    name="nombreCategoriaProducto" 
+                                    value={productoData.nombreCategoriaProducto} 
                                     onChange={handleChange} 
                                     disabled={cargandoCategorias}
                                     required
@@ -204,14 +216,13 @@ function Admin_NuevoProducto() {
                                     {categorias.map(cat => (
                                         <option 
                                             key={cat.idCategoria} 
-                                            value={cat.idCategoria} // Enviamos el ID numérico
+                                            value={cat.nombreCategoria}
                                         >
                                             {cat.nombreCategoria}
                                         </option>
                                     ))}
                                 </select>
                                 
-                                {/* INPUT DE IMAGEN */}
                                 <input type="file" name="imagen" accept="image/*" onChange={handleImageChange} />
                             </div>
 

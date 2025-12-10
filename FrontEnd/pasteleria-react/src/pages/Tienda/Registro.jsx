@@ -6,17 +6,14 @@ import BarraNav from "./BarraNav";
 import Footer from "./Footer";
 import Swal from 'sweetalert2'; 
 
-// URL base del backend
-const API_BASE_URL = "http://localhost:8015/api/v1"; // Ajusté la barra final si no la quieres doble
+const API_BASE_URL = "http://localhost:8015/api/v1"; 
 
-// --- IMPORTANTE: Obtener las comunasPorRegion del archivo JS global ---
-const comunasPorRegion = window.comunasPorRegion || { /* ... mock data si es necesario ... */ };
+const comunasPorRegion = window.comunasPorRegion || {  };
 
 
 function Registro() {
     const navigate = useNavigate();
 
-    // --- ESTADOS (Claves consistentes con el backend) ---
     const [formData, setFormData] = useState({
         nombreUsuario: "",
         apellidosUsuario: "",
@@ -35,13 +32,10 @@ function Registro() {
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [comunasDisponibles, setComunasDisponibles] = useState([]);
     
-    // Asumo que tienes una función global para validar campos vacíos
     const validarCampoVacio = window.validarCampoVacio || ((t) => t && t.trim() !== '');
 
-    // --- EFECTO 1: Carga de Scripts (Se mantiene) ---
     useEffect(() => {
         const loadScripts = () => {
-            // ... (Lógica de carga de scripts) ...
             if (!window.Swal) {
                 const swalScript = document.createElement("script");
                 swalScript.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
@@ -67,7 +61,6 @@ function Registro() {
         loadScripts();
     }, []);
 
-    // --- EFECTO 2: Lógica de Comunas y Regiones (OPTIMIZADO) ---
     useEffect(() => {
         const regionKey = formData.regionUsuario; 
 
@@ -75,7 +68,6 @@ function Registro() {
             const nuevasComunas = comunasPorRegion[regionKey] || [];
             setComunasDisponibles(nuevasComunas);
             
-            // Lógica de reseteo fuera del setFormData principal para evitar bucles si la comuna no existe
             if (!nuevasComunas.includes(formData.comunaUsuario)) {
                  setFormData(prev => ({ ...prev, comunaUsuario: '' }));
             }
@@ -85,10 +77,8 @@ function Registro() {
     }, [formData.regionUsuario, isScriptLoaded]); 
 
 
-    // --- MANEJADOR DE CAMBIOS GENERAL (CORREGIDO) ---
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // El 'name' del input DEBE coincidir con la clave del estado
         setFormData(prev => ({
             ...prev,
             [name]: value,
@@ -96,11 +86,9 @@ function Registro() {
     };
 
 
-    // --- MANEJADOR DE ENVÍO Y VALIDACIÓN (Se mantiene) ---
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // ... (Tu lógica de validación aquí) ...
         if (!isScriptLoaded || !window.Swal) { window.alert("Error: Las herramientas de validación no están listas."); return; }
         const validarRut = window.validarRut;
         const validarCorreo = window.validarCorreo;
@@ -119,9 +107,7 @@ function Registro() {
         if (formData.telefonoUsuario && !validarTelefono(formData.telefonoUsuario)) { fireValidationError("El teléfono es inválido. Debe ser 9xxxxxxxx."); return; }
 
 
-// --- NUEVO PAYLOAD (AJUSTADO A CLAVES LARGAS DE ENTIDAD) ---
     const nuevoUsuarioPayload = {
-        // Si la entidad es nombreUsuario, enviamos:
         nombreUsuario: formData.nombreUsuario.trim(),
         apellidosUsuario: formData.apellidosUsuario.trim(),
         fechaNacUsuario: formData.fechaNacUsuario || null,
@@ -133,11 +119,10 @@ function Registro() {
         direccionUsuario: formData.direccionUsuario,
         passwordUsuario: formData.passwordUsuario,
         codigoDescuentoUsuario: formData.codigoDescuentoUsuario || null,
-        tipoUsuarioUsuario: 'cliente', // Corregido el nombre de la propiedad según la entidad
+        tipoUsuarioUsuario: 'cliente', 
     };
 
         try {
-            // Llamada POST a tu endpoint de creación de usuarios
             const response = await axios.post(`${API_BASE_URL}/usuarios/save`, nuevoUsuarioPayload);
             const usuarioCreado = response.data;
 
@@ -165,9 +150,6 @@ function Registro() {
                     </div>
 
                     <form className="form-registro" autoComplete="off" onSubmit={handleSubmit}>
-                        
-                        {/* 🔑 CLAVE: CORRECCIÓN EN EL ATRIBUTO NAME */}
-                        
                         <div className="fila-formulario">
                             <input type="text" name="nombreUsuario" placeholder="Nombre" value={formData.nombreUsuario} onChange={handleChange} required />
                             <input type="text" name="apellidosUsuario" placeholder="Apellidos" value={formData.apellidosUsuario} onChange={handleChange} required />
@@ -190,7 +172,6 @@ function Registro() {
                                      <option key={regionKey} value={regionKey}>{regionKey.charAt(0).toUpperCase() + regionKey.slice(1).replace('_', ' ')}</option>
                                  ))}
                             </select>
-                            {/* CLAVE: ComunasDisponibles ya está calculado en el useEffect */}
                             <select name="comunaUsuario" value={formData.comunaUsuario} onChange={handleChange} disabled={!formData.regionUsuario || comunasDisponibles.length === 0} required>
                                  <option value="" disabled>Seleccione Comuna</option>
                                  {comunasDisponibles.map(com => ( <option key={com} value={com}>{com}</option> ))}

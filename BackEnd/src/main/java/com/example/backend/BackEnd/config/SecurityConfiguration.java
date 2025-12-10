@@ -39,8 +39,9 @@ public class SecurityConfiguration {
                             "/api/v1/auth/**",
                             "/api/v1/usuarios/save",
                             
-                            
-                            "/api/v1/productos/**",
+                            // GET de productos y categorías es público (lectura)
+                            "/api/v1/productos/all",
+                            "/api/v1/productos/find/**",
                             "/api/v1/categorias/**",
                             
                             

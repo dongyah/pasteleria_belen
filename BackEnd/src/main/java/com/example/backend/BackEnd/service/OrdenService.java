@@ -32,11 +32,7 @@ public class OrdenService {
         return ordenRepository.findById(idOrden);
     }
     
-    /**
-     * Procesa y guarda la orden junto con sus ítems de detalle.
-     * @param orderRequest 
-     * @return 
-     */
+    
     @Transactional
     public Orden createOrden(OrderRequest orderRequest) {
         
@@ -44,7 +40,6 @@ public class OrdenService {
                 .usuarioId(orderRequest.getUsuarioId())
                 .nombreCliente(orderRequest.getCliente().getNombre() + " " + orderRequest.getCliente().getApellidos())
                 .correoCliente(orderRequest.getCliente().getCorreo())
-                // Concatenamos calle, comuna y región para el campo de dirección
                 .direccionEnvio(orderRequest.getCliente().getCalle() + ", " + orderRequest.getCliente().getComuna() + ", " + orderRequest.getCliente().getRegion())
                 .indicaciones(orderRequest.getCliente().getIndicaciones())
                 .fechaCompra(LocalDateTime.now())
@@ -73,11 +68,7 @@ public class OrdenService {
         return ordenGuardada;
     }
 
-    /**
-     * @param idOrden 
-     * @param nuevoEstado
-     * @return
-     */
+
     public Optional<Orden> updateEstado(Long idOrden, String nuevoEstado) {
         return ordenRepository.findById(idOrden).map(orden -> {
             orden.setEstado(nuevoEstado);

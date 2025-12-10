@@ -22,7 +22,6 @@ function Home() {
             <BarraNav />
             <main className="home-content">
                 
-                {/* === 1. HERO SECTION (Alto Impacto) === */}
                 <section className="hero-section">
                     <img 
                         src="img/tienda online.png" 
@@ -40,15 +39,12 @@ function Home() {
                 </section>
 
                 
-                {/* === 2. PRODUCTOS DESTACADOS === */}
                 <section className="featured-products">
                     <h2 className="section-title">Nuestros productos destacados</h2>
                     <p className="section-description">Una dulce selección de los favoritos de nuestros clientes más exigentes.</p>
                     
                     <div className="product-grid">
                         {productosDestacados.map((prod, index) => (
-                            // 🔑 CORRECCIÓN: Los comentarios de JSX ahora están en una sola línea o dentro del bloque {}.
-                            // Enviamos el nombre como parámetro 'producto' a la ruta de detalle
                             <Link 
                                 to={`/producto-detalle?producto=${encodeURIComponent(prod.nombre)}`} 
                                 key={index} 
@@ -65,7 +61,6 @@ function Home() {
                     </div>
                 </section>
 
-                {/* === 3. SECCIÓN DE BLOG/INFO RÁPIDA === */}
                 <section className="blog-section">
                     <h2 className="section-title color-primary">Novedades y Tendencias</h2>
                     <p className="section-description">Descubre las últimas tendencias y consejos de nuestros Maestros Pasteleros.</p>

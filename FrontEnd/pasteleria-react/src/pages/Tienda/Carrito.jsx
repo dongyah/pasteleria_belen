@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom"; // Importar useNavigate
+import { Link, useNavigate } from "react-router-dom"; 
 import "../../styles/all.css";
 import "../../styles/Tienda.css";
 import { useCart } from "../../context/CartContext";
@@ -41,7 +41,6 @@ function Carrito() {
                         </div>
                     ) : (
                         <div className="cart-grid">
-                            {/* --- COLUMNA DE PRODUCTOS --- */}
                             <div className="cart-list-column">
                                 {cart.map((item, index) => (
                                     <div key={index} className="carrito-item-pro">
@@ -75,7 +74,6 @@ function Carrito() {
                                 ))}
                             </div>
 
-                            {/* --- COLUMNA DE RESUMEN Y ACCIONES --- */}
                             <div className="cart-summary-column">
                                 <h3 className="summary-title">Resumen de la Compra</h3>
                                 <div className="summary-total">

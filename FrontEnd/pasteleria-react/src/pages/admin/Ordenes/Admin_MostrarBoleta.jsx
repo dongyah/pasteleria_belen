@@ -4,16 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import Admin_BarraLateral from '../Admin_BarraLateral'; // Ajusta la ruta si es necesario
+import Admin_BarraLateral from '../Admin_BarraLateral';
 import '../../../styles/Admin.css'; 
-import '../../../styles/Admin_Gestion.css'; 
-// Si usas un archivo CSS específico para la boleta, asegúrate de que exista,
-// sino, confiaremos en los estilos de Admin.css
+import '../../../styles/Admin_Gestion.css';
 
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Admin_MostrarBoleta() {
-    // 🔑 FIX CRÍTICO: Capturar el parámetro como 'id' (como está en App.jsx)
     const { id } = useParams(); 
     const navigate = useNavigate();
     const [orden, setOrden] = useState(null);
@@ -24,7 +21,6 @@ function Admin_MostrarBoleta() {
         setCargando(true);
         setError(null);
         
-        // El ID debe ser un número válido antes de hacer la llamada
         if (!id || isNaN(Number(id))) {
             setError("ID de Orden inválido.");
             setCargando(false);
@@ -38,8 +34,6 @@ function Admin_MostrarBoleta() {
         }
 
         try {
-            // 🔑 FIX: Usar el parámetro 'id' capturado correctamente
-            // Llamada protegida a GET /api/v1/ordenes/find/{id}
             const response = await axios.get(`${API_BASE_URL}/ordenes/find/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}` 
@@ -66,20 +60,17 @@ function Admin_MostrarBoleta() {
 
     useEffect(() => {
         fetchDetalleOrden();
-    }, [id]); // Dependencia del ID para recargar si cambia
+    }, [id]);
 
     const handlePrint = () => {
         window.print();
     };
 
-    // Función para formatear fechas
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateString).toLocaleDateString('es-CL', options);
     };
-
-    // --- Renderizado de Carga y Error ---
 
     if (cargando) {
         return (
@@ -102,8 +93,6 @@ function Admin_MostrarBoleta() {
         );
     }
     
-    // Si la carga fue exitosa, renderizamos la boleta
-    
     return (
         <div className="admin-layout">
             <Admin_BarraLateral />
@@ -120,7 +109,6 @@ function Admin_MostrarBoleta() {
                 <div className="card shadow-sm boleta-print-area">
                     <div className="card-body p-4">
                         
-                        {/* --- Encabezado de la Boleta --- */}
                         <div className="row mb-4">
                             <div className="col-md-6">
                                 <img src="/img/logo_pasteleria.png" alt="Logo Pastelería" style={{ width: '80px' }} />
@@ -135,7 +123,6 @@ function Admin_MostrarBoleta() {
                         </div>
                         <hr />
 
-                        {/* --- Información del Cliente y Envío --- */}
                         <div className="row mb-4">
                             <div className="col-md-6">
                                 <h5>Datos del Cliente</h5>
@@ -150,7 +137,6 @@ function Admin_MostrarBoleta() {
                             </div>
                         </div>
                         
-                        {/* --- Tabla de Ítems --- */}
                         <table className="table table-bordered table-sm">
                             <thead className="table-light">
                                 <tr>
@@ -161,7 +147,6 @@ function Admin_MostrarBoleta() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Usamos orden.items que es la lista de OrdenProducto (debe ser EAGER) */}
                                 {orden.items && orden.items.map(item => (
                                     <tr key={item.productoId}>
                                         <td>{item.cantidad}</td>
@@ -173,7 +158,6 @@ function Admin_MostrarBoleta() {
                             </tbody>
                         </table>
 
-                        {/* --- SECCIÓN DE TOTALES --- */}
                         <div className="row justify-content-end mt-4">
                             <div className="col-md-4">
                                 <ul className="list-group">

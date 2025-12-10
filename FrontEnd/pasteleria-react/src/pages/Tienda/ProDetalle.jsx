@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { productos } from "../../data/productos"; // 🔑 Importar el mockup
+import { productos } from "../../data/productos";
 import "../../styles/all.css";
 import { useCart } from "../../context/CartContext";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
-import Swal from 'sweetalert2'; // Usamos Swal para feedback
+import Swal from 'sweetalert2';
 
 export default function ProDetalle() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   
-  // 🔑 La URL trae el nombre completo del producto: ?producto=Torta%20Cuadrada%20de%20Chocolate
   const productoSeleccionadoRaw = queryParams.get("producto");
 
   const [producto, setProducto] = useState(null);
   const [cantidad, setCantidad] = useState(1);
   const { addToCart } = useCart();
   
-  // Asumimos un stock ficticio para el mockup
   const MOCK_STOCK = 10; 
 
   useEffect(() => {
@@ -27,14 +25,10 @@ export default function ProDetalle() {
         return;
     }
 
-    // Decodifica la URL y elimina espacios extra
     const claveProducto = decodeURIComponent(productoSeleccionadoRaw).trim();
-    
-    // 🔑 CLAVE: BÚSQUEDA DIRECTA POR CLAVE EN EL OBJETO MOCKUP
     const foundProduct = productos[claveProducto]; 
 
     if (foundProduct) {
-        // Agregamos la clave y el stock ficticio para usarlo en el carrito
         setProducto({
             ...foundProduct,
             keyName: claveProducto,
@@ -48,7 +42,6 @@ export default function ProDetalle() {
   const agregarAlCarrito = () => {
     if (!producto || cantidad < 1 || cantidad > producto.stock) return;
 
-    // Normalizamos los datos que enviamos al contexto
     const productoConCantidad = {
       nombre: producto.titulo, 
       precio: producto.precio,

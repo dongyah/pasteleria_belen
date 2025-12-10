@@ -1,7 +1,7 @@
 import "../../styles/all.css";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
-import { Link } from 'react-router-dom'; // Necesario si queremos que el botón funcione
+import { Link } from 'react-router-dom'; 
 
 function Nosotros() {
     return(
@@ -9,14 +9,11 @@ function Nosotros() {
             <BarraNav />
             <main className="nosotros-main">
                 
-                {/* === 1. BANNER PRINCIPAL / TÍTULO === */}
                 <div className="nosotros-header">
                     <h1 className="nosotros-title">Nuestra Tradición y Misión</h1>
                 </div>
 
-                {/* === 2. MISIÓN Y VISIÓN (Diseño Split Elegante) === */}
                 
-                {/* MISIÓN */}
                 <section className="history-section split-content reverse-order">
                     <div className="split-text-box">
                         <h2 className="section-subtitle color-primary">Nuestra Misión</h2>
@@ -32,7 +29,6 @@ function Nosotros() {
                     </div>
                 </section>
                 
-                {/* VISIÓN */}
                 <section className="history-section split-content">
                     <div className="split-text-box">
                         <h2 className="section-subtitle color-primary">Nuestra Visión</h2>
@@ -49,7 +45,6 @@ function Nosotros() {
                 </section>
 
 
-                {/* === 3. SECCIÓN ESPECIAL: EL RÉCORD GUINNESS (Fondo de color acento) === */}
                 <section className="guinness-section">
                     <div className="guinness-box">
                         <h2 className="section-title color-primary">La Historia que nos Distingue</h2>

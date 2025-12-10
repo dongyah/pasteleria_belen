@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table; // Es buena práctica definir el nombre de la tabla
+import jakarta.persistence.Table; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,11 +29,9 @@ public class Producto {
     private Integer stockProducto;
     private Integer stockCriticoProducto;
     
-    // Campo para la URL/Ruta de la imagen
     private String imagenProducto; 
 
-    // 🔑 CAMBIO CRÍTICO: ALMACENAR EL NOMBRE DE LA CATEGORÍA COMO STRING
-    // Esto reemplaza la relación @ManyToOne con la entidad Categoria
+
     @Column(name = "nombre_categoria_producto")
     private String nombreCategoriaProducto;
 

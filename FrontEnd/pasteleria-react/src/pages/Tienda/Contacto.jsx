@@ -3,9 +3,8 @@ import "../../styles/all.css";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
 import Swal from 'sweetalert2'; 
-import axios from 'axios'; // Importar Axios
+import axios from 'axios'; 
 
-// URL base de tu backend (Ajustar si es necesario)
 const API_BASE_URL = 'http://localhost:8015/api/v1'; 
 
 function Contacto() {
@@ -16,14 +15,13 @@ function Contacto() {
         mensajeContacto: ''
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false); // Estado para controlar el envío
-
+    const [isSubmitting, setIsSubmitting] = useState(false); 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => { // Función ahora es async
+    const handleSubmit = async (e) => { 
         e.preventDefault();
         
         // 1. Validación básica
@@ -32,14 +30,11 @@ function Contacto() {
             return;
         }
 
-        setIsSubmitting(true); // Bloquear el botón
+        setIsSubmitting(true); 
         
         try {
-            // 2. Llamada a la API (Asumo /api/v1/contacto o /api/contacto)
-            // Usaremos /contacto para seguir la convención de tu comentario
             const response = await axios.post(`${API_BASE_URL}/contacto/save`, formData); 
             
-            // 3. Respuesta exitosa
             Swal.fire({
                 title: 'Mensaje Enviado',
                 text: 'Gracias por contactarnos. Responderemos a tu solicitud lo antes posible.',
@@ -50,7 +45,7 @@ function Contacto() {
             setFormData({ nombreContacto: '', correoContacto: '', asuntoContacto: '', mensajeContacto: '' });
 
         } catch (error) {
-            // 4. Manejo de errores de la API
+            // Manejo de errores de la API
             console.error("Error al enviar el formulario:", error.response || error);
             
             let errorMsg = 'No se pudo enviar el mensaje. Inténtelo más tarde o revise la conexión.';
@@ -69,7 +64,7 @@ function Contacto() {
         }
     };
 
-    // URL de ejemplo para Google Maps (similar al footer)
+    // URL de ejemplo para Google Maps 
     const mapaUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3329.584980696752!2d-70.64771268480036!3d-33.43598588078028!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662c502b412953f%3A0x6c63b4b8a2e7c3e!2sPlaza%20de%20Armas!5e0!3m2!1ses-419!2scl!4v1675713726521!5m2!1ses-419!2scl";
 
     return (
@@ -82,7 +77,6 @@ function Contacto() {
 
                 <div className="contacto-grid">
                     
-                    {/* 1. INFORMACIÓN DE CONTACTO DIRECTA (Se mantiene igual) */}
                     <div className="contacto-info-box">
                         <h2 className="info-title">Información Directa</h2>
                         <p className="info-detail">
@@ -116,7 +110,6 @@ function Contacto() {
                         </div>
                     </div>
 
-                    {/* 2. FORMULARIO DE CONTACTO */}
                     <div className="contacto-form-box">
                         <h2 className="info-title">Envíanos un Mensaje</h2>
                         <form id="form-contacto" onSubmit={handleSubmit}>

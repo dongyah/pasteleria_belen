@@ -5,20 +5,15 @@ import "../../styles/Tienda.css";
 import { useCart } from "../../context/CartContext";
 import BarraNav from "./BarraNav";
 import Footer from "./Footer";
-// 🔑 Importamos SweetAlert2 para mostrar el feedback rápido
 import Swal from 'sweetalert2'; 
-
-// 🔑 IMPORTAR EL MOCKUP DEL ARCHIVO LOCAL (asumo que se llama productos)
 import { productos } from "../../data/productos"; 
 
 function Productos() {
     const { addToCart } = useCart();
     const [filtro, setFiltro] = useState("all");
 
-    // 🔑 TRANSFORMAR EL OBJETO MOCKUP A UN ARRAY USABLE
     const productosArray = Object.keys(productos).map(key => ({
         ...productos[key],
-        // Lógica de filtrado temporal para el mockup
         tipo: key.toLowerCase().includes('cuadrada') ? 'cuadrada' 
             : key.toLowerCase().includes('circular') ? 'circular' 
             : key.toLowerCase().includes('individuales') || key.toLowerCase().includes('mousse') || key.toLowerCase().includes('tiramisú') ? 'individuales'
@@ -28,7 +23,7 @@ function Productos() {
             : key.toLowerCase().includes('vegan') ? 'veganos'
             : key.toLowerCase().includes('especial') ? 'especiales'
             : 'all', 
-        keyName: key // Guardamos la clave para el URL
+        keyName: key 
     }));
 
     const categorias = [
@@ -46,22 +41,18 @@ function Productos() {
     const productosFiltrados =
         filtro === "all" ? productosArray : productosArray.filter((p) => p.tipo === filtro);
 
-    // --- FUNCIÓN PARA AÑADIR AL CARRO (1 UNIDAD CON ALERTA TOAST) ---
     const handleAddToCartClick = (prod) => {
         
-        // 1. Crear el objeto para el carrito (siempre con 1 unidad)
         const productForCart = {
             nombre: prod.titulo || prod.nombre, 
             precio: prod.precio,
             img: prod.imagen_principal || prod.img,
-            cantidad: 1, // ⬅️ Siempre agregamos 1 unidad
+            cantidad: 1,
             key: prod.keyName
         };
 
-        // 2. Agregar al carrito
         addToCart(productForCart);
 
-        // 3. Feedback: Mostrar Alerta Toast
         Swal.fire({
             icon: 'success',
             title: '¡Añadido a la Bolsa!',
@@ -72,7 +63,6 @@ function Productos() {
             timer: 3000
         });
     };
-    // ----------------------------------------------------------------
 
     return (
         <>
@@ -84,7 +74,6 @@ function Productos() {
                     <p className="product-page-subtitle">Descubre la exclusividad de nuestra repostería por categoría.</p>
                 </div>
 
-                {/* --- NAVEGACIÓN DE CATEGORÍAS --- */}
                 <div className="category-nav-container">
                     <div className="category-nav">
                         {categorias.map(cat => (
@@ -99,7 +88,6 @@ function Productos() {
                     </div>
                 </div>
 
-                {/* --- GALERÍA DE PRODUCTOS --- */}
                 <section className="product-gallery">
                     {productosFiltrados.map((prod, index) => (
                         <div className="gallery-card" key={prod.keyName || index}> 
@@ -113,8 +101,6 @@ function Productos() {
                             
                             <div className="card-footer-action">
                                 <p className="gallery-card-price">${(prod.precio || 0).toLocaleString()} CLP</p>
-                                
-                                {/* 🔑 CLAVE: Usamos la función simple para añadir 1 unidad y mostrar el Toast */}
                                 <button 
                                     className="btn btn-card-action" 
                                     onClick={() => handleAddToCartClick(prod)}

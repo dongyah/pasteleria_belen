@@ -15,7 +15,6 @@ function Admin_GestionUsuarios() {
     const [error, setError] = useState(null);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false); 
 
-    // --- EFECTO: Carga de SweetAlert2 ---
     useEffect(() => {
         if (!window.Swal) {
             const swalScript = document.createElement("script");
@@ -28,16 +27,13 @@ function Admin_GestionUsuarios() {
         }
     }, []); 
 
-    // --- FUNCIÓN CRÍTICA: CARGA Y AUTORIZACIÓN JWT ---
     const fetchUsuarios = async () => {
         setCargando(true);
         setError(null);
         
-        // 🔑 PASO 1: OBTENER EL TOKEN JWT
         const token = localStorage.getItem('jwtToken');
 
         if (!token) {
-            // Si no hay token, redirigir y terminar
             setError("Error: Token de sesión no encontrado. Reintente el login.");
             setCargando(false);
             navigate('/login');
@@ -45,8 +41,6 @@ function Admin_GestionUsuarios() {
         }
 
         try {
-            // 🔑 PASO 2: INCLUIR EL TOKEN EN LOS HEADERS
-            // Esto es crucial para que Spring Security conceda el acceso (403/CORS)
             const response = await axios.get(`${API_BASE_URL}/usuarios/all`, {
                 headers: {
                     'Authorization': `Bearer ${token}` 

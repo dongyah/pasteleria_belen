@@ -13,18 +13,13 @@ const API_BASE_URL = 'http://localhost:8015/api/v1';
 function Admin_NuevaCategoria() {
 
     const navigate = useNavigate();
-
-    // --- ESTADO ---
     const [nombreCategoria, setNombreCategoria] = useState(''); 
-    
-    // --- ESTADOS DE CONTROL ---
     const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false); 
 
 
     useEffect(() => {
-        // Carga de SweetAlert2
         const loadScripts = () => {
              if (!window.Swal) {
                  const swalScript = document.createElement("script");
@@ -58,7 +53,6 @@ function Admin_NuevaCategoria() {
 
         setIsSubmitting(true);
         
-        // 🔑 FIX CRÍTICO 1: Obtener el token de localStorage
         const token = localStorage.getItem('jwtToken'); 
         
         if (!token) {
@@ -68,12 +62,10 @@ function Admin_NuevaCategoria() {
         }
         
         try {
-            // --- PAYLOAD AJUSTADO (Coincide con Categoria.java) ---
             const categoriaPayload = {
                 nombreCategoria: nombreCategoria, 
             };
             
-            // 🔑 FIX CRÍTICO 2: Enviar el token en el encabezado para evitar el 403 Forbidden
             const response = await axios.post(`${API_BASE_URL}/categorias/save`, categoriaPayload, {
                 headers: {
                     'Authorization': `Bearer ${token}` 
@@ -88,9 +80,8 @@ function Admin_NuevaCategoria() {
                 'success'
             );
             
-            setNombreCategoria(''); // Limpiamos el estado
+            setNombreCategoria('');
             navigate('/admin/categorias'); 
-
         } catch (error) {
 
             console.error("Error al guardar categoría:", error.response || error);
@@ -114,7 +105,6 @@ function Admin_NuevaCategoria() {
             <Admin_BarraLateral />
             <div className="contenido-principal">
                 <main className="admin-contenido">
-                    {/* --- BOTÓN DE VOLVER --- */}
                     <div className="volver-atras-container">
                         <Link to="/admin/categorias" className="volver-atras-link">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

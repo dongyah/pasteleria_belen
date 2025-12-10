@@ -20,21 +20,18 @@ function Admin_GestionCategorias() {
         
         const token = localStorage.getItem('jwtToken');
 
-        // La gestión de categorías requiere ser un usuario administrativo
         if (!token) {
             navigate('/login');
             return;
         }
 
         try {
-            // Llamada protegida a GET /api/v1/categorias/all
             const response = await axios.get(`${API_BASE_URL}/categorias/all`, {
                 headers: {
                     'Authorization': `Bearer ${token}` 
                 }
             });
             
-            // Aseguramos que la respuesta sea un array antes de asignarla
             if (Array.isArray(response.data)) {
                 setCategorias(response.data); 
             } else {
@@ -47,7 +44,7 @@ function Admin_GestionCategorias() {
             
             let errorMsg = "Error al cargar categorías. Verifique el servidor y permisos.";
             if (err.response && (err.response.status === 403 || err.response.status === 401)) {
-                 errorMsg = "Acceso denegado. Rol insuficiente (Su token no tiene el rol ADMIN/VENDEDOR).";
+                 errorMsg = "Acceso denegado. Rol insuficiente.";
             }
             
             Swal.fire('Error de Carga', errorMsg, 'error');
@@ -57,7 +54,6 @@ function Admin_GestionCategorias() {
         }
     };
     
-    // Función para manejar la eliminación
     const handleDelete = async (idCategoria) => {
         const token = localStorage.getItem('jwtToken');
 
@@ -73,7 +69,6 @@ function Admin_GestionCategorias() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // DELETE: /api/v1/categorias/delete/{id}
                     await axios.delete(`${API_BASE_URL}/categorias/delete/${idCategoria}`, {
                         headers: {
                             'Authorization': `Bearer ${token}` 
@@ -81,7 +76,7 @@ function Admin_GestionCategorias() {
                     });
                     
                     Swal.fire('¡Eliminada!', 'La categoría ha sido eliminada.', 'success');
-                    fetchCategorias(); // Recargar la lista
+                    fetchCategorias();
                 } catch (error) {
                     console.error("Error al eliminar la categoría:", error.response || error);
                     let errorMsg = 'Error al eliminar. La categoría podría tener productos asociados.';
@@ -108,7 +103,7 @@ function Admin_GestionCategorias() {
         return (
             <div className="admin-layout">
                 <Admin_BarraLateral />
-                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error} 🙁</p></div>
+                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error}</p></div>
             </div>
         );
     }
@@ -142,7 +137,6 @@ function Admin_GestionCategorias() {
                                                     <td className="text-center">{categoria.idCategoria}</td>
                                                     <td>{categoria.nombreCategoria}</td>
                                                     <td className="text-center">
-                                                        {/* 🔑 FIX CRÍTICO: Aquí se corrige el enlace de navegación */}
                                                         <Link 
                                                             to={`/admin/editar-categoria/${categoria.idCategoria}`} 
                                                             className="btn btn-sm btn-warning me-2"

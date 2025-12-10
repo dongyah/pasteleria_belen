@@ -26,20 +26,17 @@ function Admin_GestionOrdenes() {
         }
 
         try {
-            // Llamada protegida a GET /api/v1/ordenes/all
             const response = await axios.get(`${API_BASE_URL}/ordenes/all`, {
                 headers: {
                     'Authorization': `Bearer ${token}` 
                 }
             });
             
-            // 🔑 FIX CRÍTICO: Verificar que la respuesta sea un array. 
-            // Esto evita el error "ordenes.map is not a function"
             if (Array.isArray(response.data)) {
                 setOrdenes(response.data); 
             } else {
-                console.warn("El backend no devolvió un array para órdenes. Resultado:", response.data);
-                setOrdenes([]); // Asignamos un array vacío para evitar el crash
+                console.warn("El backend no devolvió un array para órdenes.");
+                setOrdenes([]);
             }
 
         } catch (err) {
@@ -48,9 +45,9 @@ function Admin_GestionOrdenes() {
             let errorMsg = "Error al cargar órdenes. Verifique el servidor y permisos.";
             
             if (err.response && (err.response.status === 403 || err.response.status === 401)) {
-                 errorMsg = "Acceso denegado (403/401). Su usuario no tiene el rol ADMIN o VENDEDOR.";
+                 errorMsg = "Acceso denegado. Su usuario no tiene el rol requerido.";
             } else if (err.response && err.response.status === 404) {
-                 errorMsg = "Error 404: La ruta /api/v1/ordenes/all no está definida correctamente en el backend.";
+                 errorMsg = "Error 404: La ruta /api/v1/ordenes/all no está definida.";
             }
             
             Swal.fire('Error de Carga', errorMsg, 'error');
@@ -64,14 +61,12 @@ function Admin_GestionOrdenes() {
         fetchOrdenes();
     }, []); 
     
-    // Función para formatear fechas
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateString).toLocaleDateString('es-CL', options);
     };
 
-    // Función para determinar el color de la etiqueta de estado
     const getBadgeClass = (estado) => {
         if (estado.includes('Envío')) return 'bg-warning text-dark';
         if (estado.includes('Entregado')) return 'bg-success';
@@ -93,7 +88,7 @@ function Admin_GestionOrdenes() {
         return (
             <div className="admin-layout">
                 <Admin_BarraLateral />
-                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error} 🙁</p></div>
+                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error}</p></div>
             </div>
         );
     }
@@ -121,7 +116,6 @@ function Admin_GestionOrdenes() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {/* Renderizado seguro: Garantiza que solo se mapee si es un array no vacío */}
                                         {Array.isArray(ordenes) && ordenes.length > 0 ? ( 
                                             ordenes.map(orden => (
                                                 <tr key={orden.idOrden}> 

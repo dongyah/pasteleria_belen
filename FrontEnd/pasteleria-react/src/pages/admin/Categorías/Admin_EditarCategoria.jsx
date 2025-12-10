@@ -7,23 +7,17 @@ import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css'; 
 import '../../../styles/Admin_NuevoProducto.css'; 
 
-// URL base de tu backend Spring Boot
 const API_BASE_URL = 'http://localhost:8015/api/v1';
 
 function Admin_EditarCategoria() {
-
-    const { id } = useParams(); // Capturamos el ID de la categoría desde la URL
+    const { id } = useParams();
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
     const [nombreCategoria, setNombreCategoria] = useState(''); 
-    
-    // --- ESTADOS DE CONTROL ---
     const [cargando, setCargando] = useState(true); 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-    // Carga de SweetAlert2 (Para manejo de errores)
     useEffect(() => {
         const loadScripts = () => {
             if (!window.Swal) {
@@ -42,7 +36,6 @@ function Admin_EditarCategoria() {
         loadScripts();
     }, []);
 
-    // --- 1. Carga la Categoría Inicial (GET) ---
     useEffect(() => {
         const fetchCategoria = async () => {
             setCargando(true);
@@ -50,7 +43,6 @@ function Admin_EditarCategoria() {
             
             const token = localStorage.getItem('jwtToken');
 
-            // 🔑 FIX CRÍTICO: Verificar que el ID sea válido antes de la llamada (previene /find/undefined)
             if (!id || isNaN(Number(id))) {
                  window.Swal.fire('Error', 'ID de categoría no válido o faltante.', 'error');
                  setCargando(false);
@@ -58,15 +50,12 @@ function Admin_EditarCategoria() {
             }
             
             try {
-                // GET: /api/v1/categorias/find/{id} (Llamada protegida)
                 const response = await axios.get(`${API_BASE_URL}/categorias/find/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}` 
                     }
                 });
                 const data = response.data;
-                
-                // Rellenar el estado
                 setNombreCategoria(data.nombreCategoria || data.nombre || ''); 
 
             } catch (error) {
@@ -74,7 +63,7 @@ function Admin_EditarCategoria() {
                 
                 let errorMsg = `Categoría ID ${id} no encontrada o error de conexión.`;
                 if (error.response && error.response.status === 403) {
-                     errorMsg = 'Acceso denegado (403): Su token no tiene permisos de edición (ADMIN/VENDEDOR).';
+                     errorMsg = 'Acceso denegado (403): Su token no tiene permisos de edición.';
                 }
                 
                 window.Swal.fire('Error de Carga', errorMsg, 'error');
@@ -88,7 +77,6 @@ function Admin_EditarCategoria() {
         }
     }, [id, isScriptLoaded]);
 
-    // --- 2. Handler de Envío (PUT) ---
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -114,16 +102,10 @@ function Admin_EditarCategoria() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // --- PAYLOAD AJUSTADO ---
                     const categoriaPayload = {
-                        // Enviamos el nombre tal como está en el estado. 
-                        // El backend debe esperar este campo.
                         nombreCategoria: nombreCategoria, 
-                        // O si la entidad Java usa solo 'nombre':
-                        // nombre: nombreCategoria, 
                     };
                     
-                    // PUT: /api/v1/categorias/update/{id}
                     await axios.put(`${API_BASE_URL}/categorias/update/${id}`, categoriaPayload, {
                         headers: {
                             'Authorization': `Bearer ${token}` 
@@ -131,12 +113,11 @@ function Admin_EditarCategoria() {
                     });
 
                     window.Swal.fire('¡Actualizado!', 'La categoría ha sido modificada.', 'success')
-                        .then(() => navigate('/admin/categorias')); // Redirigir al listado
+                        .then(() => navigate('/admin/categorias'));
 
                 } catch (error) {
-
                     console.error("Error al actualizar:", error.response || error);
-                    let errorMsg = 'Error en la actualización. Revise la ruta PUT, permisos (403) o si el nombre ya existe.';
+                    let errorMsg = 'Error en la actualización. Revise permisos o si el nombre ya existe.';
                     window.Swal.fire('Error', errorMsg, 'error');
                 }
             }
@@ -144,21 +125,11 @@ function Admin_EditarCategoria() {
         });
     };
 
-    if (cargando) {
-        return (
-            <div className="admin-layout">
-                <Admin_BarraLateral />
-                <div className="contenido-principal"><p className="text-center mt-5">Cargando datos de la categoría...</p></div>
-            </div>
-        );
-    }
-
     return (
         <div className="admin-layout">
             <Admin_BarraLateral />
             <div className="contenido-principal">
                 <main className="admin-contenido">
-                    {/* --- BOTÓN DE VOLVER --- */}
                     <div className="volver-atras-container">
                         <Link to="/admin/categorias" className="volver-atras-link">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

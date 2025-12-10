@@ -6,7 +6,6 @@ import BarraNav from "./BarraNav";
 import Footer from "./Footer";
 import Swal from 'sweetalert2';
 
-// 🔑 CORRECCIÓN DE RUTA
 const API_BASE_URL = "http://localhost:8015/api/v1"; 
 const comunasPorRegion = window.comunasPorRegion || {}; 
 
@@ -29,7 +28,6 @@ function Checkout() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isUserLoaded, setIsUserLoaded] = useState(false);
 
-    // --- EFECTO 1: Cargar Datos del Usuario Logueado (FIX de TypeError) ---
     useEffect(() => {
         const token = localStorage.getItem('jwtToken');
         
@@ -44,7 +42,6 @@ function Checkout() {
                     
                     const userProfile = response.data;
                     
-                    // 🔑 FIX FRONTAL: Verificar que userProfile no sea null/undefined. 
                     if (userProfile) { 
                         setClienteData(prev => ({
                             ...prev,
@@ -73,7 +70,6 @@ function Checkout() {
         }
     }, [clienteData.usuarioId, isUserLoaded]);
     
-    // --- EFECTO 2: Lógica de Comunas y Regiones ---
     useEffect(() => {
         if (clienteData.region && comunasPorRegion) {
             setComunasDisponibles(comunasPorRegion[clienteData.region] || []);
@@ -105,7 +101,6 @@ function Checkout() {
 
         setIsProcessing(true);
         
-        // 🔑 FIX BACKEND: Convertimos el total a Integer (entero)
         const totalInt = Math.round(total);
         
         // 1. CONSTRUCCIÓN DEL DTO OrderRequest PARA EL BACKEND
@@ -127,7 +122,6 @@ function Checkout() {
                 indicaciones: clienteData.indicaciones,
             },
             
-            // DTO ProductoItemDTO[]
             productos: cart.map(item => ({
                 productoNombre: item.nombre,
                 productoId: item.id, 
@@ -137,7 +131,6 @@ function Checkout() {
         };
 
         try {
-            // 2. LLAMADA REAL AL ENDPOINT DE CREACIÓN DE ORDENES
             const response = await axios.post(`${API_BASE_URL}/ordenes/create`, orderRequestPayload);
             
             const orderId = response.data.idOrden; 
@@ -154,7 +147,6 @@ function Checkout() {
             let errorText = 'Hubo un problema al procesar su pago. Verifique el servidor.';
             
             if (error.response && error.response.status === 403) {
-                // Si ves este error, DEBES REINICIAR el servidor Spring Boot
                 errorText = 'Acceso Denegado (403): El servidor no permite la compra de invitados. ¡Reinicie el Backend!';
             } else if (error.response && error.response.status === 500) {
                  errorText = 'Error interno (500): Verifique logs por Constraint Violation o la falta de @Builder en Orden.java';
@@ -174,7 +166,6 @@ function Checkout() {
             <main className="checkout-main">
                 <form onSubmit={handlePayment} className="checkout-form-grid">
                     
-                    {/* --- COLUMNA IZQUIERDA: RESUMEN Y DATOS --- */}
                     <div className="checkout-column">
                         <div className="checkout-section-box">
                             <h2 className="section-title-sm">1. Productos y Total</h2>
@@ -207,7 +198,6 @@ function Checkout() {
                         </div>
                     </div>
                     
-                    {/* --- COLUMNA DERECHA: DIRECCIÓN Y PAGO --- */}
                     <div className="checkout-column">
                          <div className="checkout-section-box">
                             <h2 className="section-title-sm">3. Dirección de Entrega</h2>

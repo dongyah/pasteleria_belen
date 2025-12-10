@@ -19,7 +19,6 @@ function Admin_GestionProductos() {
         setCargando(true);
         setError(null);
         try {
-            // Petición GET al endpoint: http://localhost:8015/api/v1/productos/all (Asumido)
             const response = await axios.get(`${API_BASE_URL}/productos/all`);
             
             setProductos(response.data);
@@ -51,11 +50,7 @@ function Admin_GestionProductos() {
 
             await axios.delete(`${API_BASE_URL}/productos/delete/${idProducto}`); 
             
-            // Si el backend usa 'id' como clave principal:
-            setProductos(productos.filter(p => p.id !== idProducto));
-            
-            // Si el backend usa 'idProducto' como clave principal:
-            // setProductos(productos.filter(p => p.idProducto !== idProducto)); 
+            setProductos(productos.filter(p => p.id !== idProducto)); 
             
             window.alert('Producto eliminado correctamente.');
 
@@ -85,7 +80,7 @@ function Admin_GestionProductos() {
         return (
             <div className="admin-layout">
                 <Admin_BarraLateral />
-                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error} 🙁</p></div>
+                <div className="contenido-principal"><p className="text-center mt-5 text-danger">Error: {error}</p></div>
             </div>
         );
     }
@@ -99,7 +94,7 @@ function Admin_GestionProductos() {
                     <div className="card shadow-sm">
                         <div className="card-header d-flex justify-content-between align-items-center">
                             <h5 className="mb-0">Gestión de Productos ({productos.length} Registrados)</h5>
-                            <Link to="/admin/nuevo-producto" className="btn btn-primary">Nuevo Producto</Link> {/* Botón cambiado a primary para consistencia */}
+                            <Link to="/admin/nuevo-producto" className="btn btn-primary">Nuevo Producto</Link>
                         </div>
                         <div className="card-body">
                             <div className="table-responsive">
@@ -122,24 +117,21 @@ function Admin_GestionProductos() {
                                         {productos.length > 0 ? (
                                             productos.map(producto => (
                                                 <tr key={producto.id || producto.idProducto}> 
-                                                    {/* Usamos producto.id para la clave principal o producto.idProducto si es tu convención */}
                                                     <td className="text-center">{producto.id || producto.idProducto}</td> 
                                                     
-                                                    {/* --- CORRECCIONES APLICADAS AQUÍ --- */}
                                                     <td>{producto.codigoProducto}</td>
                                                     <td>{producto.nombreProducto}</td>
                                                     <td>{producto.descripcionProducto && producto.descripcionProducto.length > 50 ? `${producto.descripcionProducto.substring(0, 50)}...` : producto.descripcionProducto}</td>
                                                     <td className="text-end">{formatPrice(producto.precioProducto)}</td>
                                                     <td className="text-center">{producto.stockProducto}</td>
                                                     <td className="text-center">
-                                                        {/* Usamos stockProducto y stockCriticoProducto */}
                                                         {producto.stockCriticoProducto && producto.stockProducto <= producto.stockCriticoProducto && producto.stockCriticoProducto > 0 ? (
                                                              <span className="badge bg-danger">¡CRÍTICO! ({producto.stockCriticoProducto})</span>
                                                          ) : (
                                                              producto.stockCriticoProducto || '-'
                                                          )}
                                                      </td>
-                                                    <td>{producto.nombreCategoria}</td> {/* Asumimos que el backend devuelve el nombre de la categoría */}
+                                                    <td>{producto.nombreCategoria}</td>
                                                     <td className="text-center">
                                                          {producto.imagenProducto ? 
                                                              <img src={producto.imagenProducto} alt={producto.nombreProducto} style={{ height: '30px', width: 'auto', objectFit: 'cover' }} />

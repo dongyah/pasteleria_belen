@@ -1,5 +1,4 @@
-package com.example.backend.BackEnd.dto; // 🔑 Crea este paquete
-
+package com.example.backend.BackEnd.dto; 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

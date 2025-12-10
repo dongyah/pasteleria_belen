@@ -2,21 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Admin_BarraLateral from '../Admin_BarraLateral';
 import axios from 'axios'; 
-import Swal from 'sweetalert2'; // Asumimos que está disponible
+import Swal from 'sweetalert2';
 import '../../../styles/Admin.css';
 import '../../../styles/Admin_NuevoUsuario.css';
 
 const API_BASE_URL = 'http://localhost:8015/api/v1';
-
-// Asumimos que window.comunasPorRegion existe o es importado
 const comunasPorRegion = window.comunasPorRegion || {}; 
 
 function Admin_EditarUsuario() {
-    // Usamos 'idUsuario' en lugar de 'id' para mayor claridad
     const { idUsuario } = useParams(); 
     const navigate = useNavigate();
 
-    // --- ESTADOS DE LA DATA (AJUSTADOS A LA CONVENCIÓN ...USUARIO) ---
     const [formData, setFormData] = useState({
         nombreUsuario: '',
         apellidosUsuario: '',
@@ -32,16 +28,14 @@ function Admin_EditarUsuario() {
         codigoDescuentoUsuario: ''
     });
     
-    // --- ESTADOS DE CONTROL ---
     const [showPassword, setShowPassword] = useState(false);
-    const [comunasDisponibles, setComunasDisponibles] = useState([]);
+    const [comunasDisponibles, setComunasDisponibles] = useState([]);;
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [cargando, setCargando] = useState(true); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
 
     useEffect(() => {
-        // Carga de scripts (SweetAlert2, validaciones, etc.)
         const loadScripts = () => {
              if (!window.Swal) {
                 const swalScript = document.createElement("script");
@@ -59,29 +53,26 @@ function Admin_EditarUsuario() {
         loadScripts();
     }, []);
 
-    // --- 1. Carga los datos del usuario (GET) ---
     useEffect(() => {
         const fetchUsuario = async () => {
             setCargando(true);
             if (!isScriptLoaded) return;
 
             try {
-                // GET: /api/v1/usuarios/find/{idUsuario}
                 const response = await axios.get(`${API_BASE_URL}/usuarios/find/${idUsuario}`);
                 const data = response.data;
                 
-                // Rellenar el estado único (formData) con los datos del backend
                 setFormData({
                     nombreUsuario: data.nombreUsuario || '',
                     apellidosUsuario: data.apellidosUsuario || '',
-                    fechaNacUsuario: data.fechaNacUsuario ? data.fechaNacUsuario.split('T')[0] : '', // Formato YYYY-MM-DD
+                    fechaNacUsuario: data.fechaNacUsuario ? data.fechaNacUsuario.split('T')[0] : '',
                     rutUsuario: data.rutUsuario || '',
                     correoUsuario: data.correoUsuario || '',
                     telefonoUsuario: data.telefonoUsuario || '',
                     regionUsuario: data.regionUsuario || '',
                     comunaUsuario: data.comunaUsuario || '',
                     direccionUsuario: data.direccionUsuario || '',
-                    passwordUsuario: '', // NUNCA cargar la contraseña existente
+                    passwordUsuario: '',
                     tipoUsuarioUsuario: data.tipoUsuarioUsuario || 'cliente',
                     codigoDescuentoUsuario: data.codigoDescuentoUsuario || ''
                 });
@@ -119,8 +110,7 @@ function Admin_EditarUsuario() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // --- 4. Handler para el envío del formulario (PUT) ---
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
         if (!isScriptLoaded || !window.Swal) {
@@ -270,8 +260,7 @@ function Admin_EditarUsuario() {
                                     <option value="administrador">Administrador</option>
                                 </select>
                             </div>
-                            
-                            {/* --- Botón Guardar --- */}
+
                             <div className="acciones-formulario mt-4">
                                 <button type="submit" className="btn btn-guardar" disabled={isSubmitting || cargando}>
                                     {isSubmitting ? 'Actualizando...' : 'Actualizar Usuario'}
